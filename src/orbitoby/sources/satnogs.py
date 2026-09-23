@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from space_object_archive.sources.base import SourceAdapter
+from orbitoby.sources.base import SourceAdapter
 
 
 class SatNOGSSource(SourceAdapter):
@@ -59,7 +59,7 @@ class SatNOGSSource(SourceAdapter):
 
         self.session.headers.update(
             {
-                "User-Agent": "space-object-archive/0.1",
+                "User-Agent": "orbitoby/0.1",
                 "Accept": "application/json",
             }
         )

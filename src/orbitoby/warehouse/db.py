@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import duckdb
 
-from space_object_archive.config import DB_PATH, ensure_data_dirs
+from orbitoby.config import DB_PATH, ensure_data_dirs
 
 
 def connect_db() -> duckdb.DuckDBPyConnection:
@@ -79,4 +79,7 @@ def connect_db() -> duckdb.DuckDBPyConnection:
         """
     )
 
+    from orbitoby.warehouse.identity import SCHEMA
+
+    con.execute(SCHEMA)
     return con

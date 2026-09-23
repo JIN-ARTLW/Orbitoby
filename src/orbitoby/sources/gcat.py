@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 import requests
 
-from space_object_archive.sources.base import SourceAdapter
+from orbitoby.sources.base import SourceAdapter
 
 
 class GCATSource(SourceAdapter):
@@ -44,7 +44,7 @@ class GCATSource(SourceAdapter):
         self.session.headers.update(
             {
                 "User-Agent":
-                    "space-object-archive/0.1"
+                    "orbitoby/0.1"
             }
         )
 
@@ -81,16 +81,19 @@ class GCATSource(SourceAdapter):
         **context: Any,
     ) -> list[dict]:
 
+        # The real TSV header starts with #JCAT; do not discard it as a comment.
+        lines = payload.decode("utf-8-sig").splitlines()
+        lines = [line.lstrip("#") if line.startswith("#JCAT") else line
+                 for line in lines if line.startswith("#JCAT") or not line.startswith("#")]
         df = pd.read_csv(
-            io.BytesIO(
-                payload
-            ),
+            io.StringIO("\n".join(lines)),
             sep="\t",
-            comment="#",
             dtype=str,
             low_memory=False,
         )
 
+        df.columns = df.columns.str.strip()
+        df = df.apply(lambda col: col.str.strip())
         df = df.where(
             pd.notnull(df),
             None,

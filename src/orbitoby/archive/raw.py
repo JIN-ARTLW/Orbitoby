@@ -6,8 +6,9 @@ import json
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
-from space_object_archive.config import RAW_DIR
+from orbitoby.config import RAW_DIR
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,7 +42,7 @@ def save_raw_artifact(
 
     artifact_id = (
         f"{retrieved_at:%Y%m%dT%H%M%SZ}_"
-        f"{sha256[:12]}"
+        f"{sha256[:12]}_{uuid4().hex}"
     )
 
     object_dir = (

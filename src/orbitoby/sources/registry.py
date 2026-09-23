@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from space_object_archive.sources.base import SourceAdapter
-from space_object_archive.sources.celestrak import CelesTrakSource
-from space_object_archive.sources.gcat import GCATSource
-from space_object_archive.sources.launchlibrary import (
+from orbitoby.sources.base import SourceAdapter
+from orbitoby.sources.celestrak import CelesTrakSource
+from orbitoby.sources.gcat import GCATSource
+from orbitoby.sources.launchlibrary import (
     LaunchLibrarySource,
 )
-from space_object_archive.sources.noaa import NoaaSource
-from space_object_archive.sources.satnogs import SatNOGSSource
-from space_object_archive.sources.spacetrack import SpaceTrackSource
+from orbitoby.sources.noaa import NoaaSource
+from orbitoby.sources.satnogs import SatNOGSSource
+from orbitoby.sources.spacetrack import SpaceTrackSource
 
 
 def build_sources() -> dict[str, SourceAdapter]:

@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from space_object_archive.sources.base import SourceAdapter
+from orbitoby.sources.base import SourceAdapter
 
 
 class LaunchLibrarySource(SourceAdapter):
@@ -51,7 +51,7 @@ class LaunchLibrarySource(SourceAdapter):
         self.session.headers.update(
             {
                 "User-Agent":
-                    "space-object-archive/0.1"
+                    "orbitoby/0.1"
             }
         )
 

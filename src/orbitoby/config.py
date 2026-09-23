@@ -13,8 +13,8 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 DATA_DIR = Path(
     os.getenv(
-        "SOA_DATA_DIR",
-        str(Path.home() / ".space-object-archive"),
+        "ORBITOBY_DATA_DIR",
+        str(Path.home() / ".orbitoby"),
     )
 ).expanduser().resolve()
 

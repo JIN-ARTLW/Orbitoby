@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from space_object_archive.sources.base import SourceAdapter
+from orbitoby.sources.base import SourceAdapter
 
 
 class NoaaSource(SourceAdapter):
@@ -67,7 +67,7 @@ class NoaaSource(SourceAdapter):
         self.session.headers.update(
             {
                 "User-Agent":
-                    "space-object-archive/0.1"
+                    "orbitoby/0.1"
             }
         )
 

@@ -6,11 +6,11 @@ from typing import Any
 
 import requests
 
-from space_object_archive.config import (
+from orbitoby.config import (
     SPACETRACK_PASSWORD,
     SPACETRACK_USERNAME,
 )
-from space_object_archive.sources.base import SourceAdapter
+from orbitoby.sources.base import SourceAdapter
 
 
 class SpaceTrackSource(SourceAdapter):
@@ -190,7 +190,7 @@ class SpaceTrackSource(SourceAdapter):
     ) -> list[dict]:
         """
         Space-Track raw JSON을
-        space-object-archive 내부 형식으로 변환한다.
+        orbitoby 내부 형식으로 변환한다.
         """
 
         if dataset != "gp_history":

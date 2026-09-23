@@ -5,19 +5,21 @@ from typing import Any
 
 import pandas as pd
 
-from space_object_archive.archive.raw import (
+from orbitoby.archive.raw import (
     RawArtifact,
     save_raw_artifact,
 )
-from space_object_archive.sources.base import SourceAdapter
-from space_object_archive.sources.registry import build_sources
-from space_object_archive.warehouse.coverage import missing_ranges
-from space_object_archive.warehouse.db import connect_db
+from orbitoby.catalogue import CatalogueAPI
+from orbitoby.warehouse.identity import IdentityStore
+from orbitoby.sources.base import SourceAdapter
+from orbitoby.sources.registry import build_sources
+from orbitoby.warehouse.coverage import missing_ranges
+from orbitoby.warehouse.db import connect_db
 
 
-class Archive:
+class Archive(CatalogueAPI):
     """
-    Space Object Archive의 메인 서비스.
+    Orbitoby의 메인 서비스.
 
     역할
     ----
@@ -129,6 +131,9 @@ class Archive:
             source별 query parameter.
         """
 
+        for key in ("start", "end"):
+            if params.get(key) is not None:
+                params[key] = self._parse_date(params[key])
         adapter = self.get_source(
             source
         )
@@ -193,6 +198,13 @@ class Archive:
         # --------------------------------------------------------------
         # 4. DataFrame 반환
         # --------------------------------------------------------------
+
+        if archive_raw:
+            # Index the full response; SatNOGS local limits only affect display.
+            index_params = {k: v for k, v in params.items()
+                            if k not in {"limit", "local_limit"}}
+            indexed_records = adapter.normalize(dataset, payload, **index_params)
+            IdentityStore(self.con).ingest(indexed_records, artifact)
 
         return pd.DataFrame(
             records
@@ -380,24 +392,31 @@ class Archive:
         # 5. orbit_elements 저장
         # --------------------------------------------------------------
 
-        self._insert_orbit_records(
-            records=records,
-            artifact=artifact,
-            source_name=source_name,
-        )
-
-        # --------------------------------------------------------------
-        # 6. coverage 기록
-        # --------------------------------------------------------------
-
-        self._register_coverage(
-            source_name=source_name,
-            dataset="gp_history",
-            norad_id=norad_id,
-            start=start,
-            end=end,
-            artifact=artifact,
-        )
+        self.con.execute("BEGIN TRANSACTION")
+        try:
+            IdentityStore(self.con).ingest(records, artifact, transaction=False)
+            self._insert_orbit_records(
+                records=records,
+                artifact=artifact,
+                source_name=source_name,
+            )
+    
+            # --------------------------------------------------------------
+            # 6. coverage 기록
+            # --------------------------------------------------------------
+    
+            self._register_coverage(
+                source_name=source_name,
+                dataset="gp_history",
+                norad_id=norad_id,
+                start=start,
+                end=end,
+                artifact=artifact,
+            )
+            self.con.execute("COMMIT")
+        except Exception:
+            self.con.execute("ROLLBACK")
+            raise
 
         print(
             f"[Archive] stored "
