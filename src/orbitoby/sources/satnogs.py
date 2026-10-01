@@ -28,6 +28,15 @@ class SatNOGSSource(SourceAdapter):
     """
 
     name = "satnogs"
+    identity_datasets = frozenset(
+        {
+            "satellites",
+            "tle",
+            "tle_historical",
+            "transmitters",
+            "optical_observations",
+        }
+    )
 
     datasets = (
         "satellites",

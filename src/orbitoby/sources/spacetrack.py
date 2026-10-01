@@ -19,6 +19,11 @@ class SpaceTrackSource(SourceAdapter):
     """Authenticated Space-Track GP history source."""
 
     name = "spacetrack"
+    identity_datasets = frozenset(
+        {
+            "gp_history",
+        }
+    )
 
     datasets = ("gp_history",)
 

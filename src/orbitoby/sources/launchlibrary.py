@@ -10,6 +10,11 @@ from orbitoby.sources.metadata import source_metadata
 
 class LaunchLibrarySource(SourceAdapter):
     name = "launchlibrary"
+    identity_datasets = frozenset(
+        {
+            "payloads",
+        }
+    )
 
     datasets = (
         "payloads",

@@ -10,6 +10,12 @@ from orbitoby.sources.metadata import source_metadata
 
 class CelesTrakSource(SourceAdapter):
     name = "celestrak"
+    identity_datasets = frozenset(
+        {
+            "gp",
+            "satcat",
+        }
+    )
 
     datasets = (
         "gp",
