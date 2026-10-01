@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 
 class SourceAdapter(ABC):
-    """
-    모든 외부 데이터 소스가 따라야 하는 공통 인터페이스.
-    """
+    """Common interface for Orbitoby data-source adapters."""
 
     name: str
     datasets: tuple[str, ...] = ()
@@ -18,9 +18,7 @@ class SourceAdapter(ABC):
         dataset: str,
         **params: Any,
     ) -> bytes:
-        """
-        외부 데이터 소스의 raw response를 bytes로 반환.
-        """
+        """Return the provider's raw response bytes."""
         raise NotImplementedError
 
     @abstractmethod
@@ -30,7 +28,60 @@ class SourceAdapter(ABC):
         payload: bytes,
         **context: Any,
     ) -> list[dict]:
-        """
-        raw response를 Python record 형식으로 변환.
+        """Normalize one raw response into Python records.
+
+        This compatibility API may materialize the complete result.
+        Large built-in datasets should additionally implement
+        ``iter_normalized_batches`` and/or ``iter_normalized_file``.
         """
         raise NotImplementedError
+
+    def iter_normalized_batches(
+        self,
+        dataset: str,
+        payload: bytes,
+        *,
+        batch_size: int = 1000,
+        **context: Any,
+    ) -> Iterator[list[dict]]:
+        """Yield bounded batches of normalized records.
+
+        Default implementation preserves compatibility with existing
+        adapters by calling ``normalize`` once. It is not guaranteed
+        to be memory-bounded.
+
+        Large adapters should override this method.
+        """
+        if batch_size <= 0:
+            raise ValueError("batch_size must be > 0")
+
+        records = self.normalize(
+            dataset,
+            payload,
+            **context,
+        )
+
+        for start in range(0, len(records), batch_size):
+            yield records[start : start + batch_size]
+
+    def iter_normalized_file(
+        self,
+        dataset: str,
+        path: str | Path,
+        *,
+        batch_size: int = 1000,
+        **context: Any,
+    ) -> Iterator[list[dict]]:
+        """Normalize an archived file in bounded batches.
+
+        Default implementation reads the file into memory and delegates
+        to ``iter_normalized_batches``. Large adapters should override it.
+        """
+        payload = Path(path).read_bytes()
+
+        yield from self.iter_normalized_batches(
+            dataset,
+            payload,
+            batch_size=batch_size,
+            **context,
+        )

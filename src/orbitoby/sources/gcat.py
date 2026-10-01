@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import csv
 import io
-from typing import Any
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any, TextIO
 
-import pandas as pd
 import requests
 
 from orbitoby.sources.base import SourceAdapter
@@ -33,46 +35,156 @@ class GCATSource(SourceAdapter):
         "vimcat",
     )
 
-    BASE_URL = (
-        "https://planet4589.org/"
-        "space/gcat/tsv/cat"
-    )
+    BASE_URL = "https://planet4589.org/space/gcat/tsv/cat"
 
     def __init__(self) -> None:
         self.session = requests.Session()
-
         self.session.headers.update(
             {
-                "User-Agent":
-                    "orbitoby/0.1"
+                "User-Agent": "orbitoby/0.1",
             }
         )
+
+    def _validate_dataset(self, dataset: str) -> None:
+        if dataset not in self.datasets:
+            raise ValueError(f"Unsupported GCAT dataset: {dataset}")
 
     def fetch(
         self,
         dataset: str,
         **params: Any,
     ) -> bytes:
+        self._validate_dataset(dataset)
 
-        if dataset not in self.datasets:
-            raise ValueError(
-                f"Unsupported GCAT dataset: "
-                f"{dataset}"
-            )
-
-        url = (
-            f"{self.BASE_URL}/"
-            f"{dataset}.tsv"
-        )
+        url = f"{self.BASE_URL}/{dataset}.tsv"
 
         response = self.session.get(
             url,
             timeout=180,
         )
-
         response.raise_for_status()
 
         return response.content
+
+    @staticmethod
+    def _filtered_lines(
+        stream: TextIO,
+    ) -> Iterator[str]:
+        """Preserve #JCAT as the header and ignore other comment lines."""
+        for line in stream:
+            if line.startswith("\ufeff"):
+                line = line.lstrip("\ufeff")
+
+            if line.startswith("#JCAT"):
+                yield line[1:]
+                continue
+
+            if line.startswith("#"):
+                continue
+
+            if not line.strip():
+                continue
+
+            yield line
+
+    @classmethod
+    def _iter_rows(
+        cls,
+        stream: TextIO,
+    ) -> Iterator[dict]:
+        reader = csv.DictReader(
+            cls._filtered_lines(stream),
+            delimiter="\t",
+        )
+
+        if reader.fieldnames is None:
+            return
+
+        reader.fieldnames = [field.strip() for field in reader.fieldnames]
+
+        for raw_row in reader:
+            row: dict[str, object] = {}
+
+            for key, value in raw_row.items():
+                if key is None:
+                    continue
+
+                clean_key = key.strip()
+
+                if value is None:
+                    clean_value = None
+                else:
+                    stripped = value.strip()
+                    clean_value = stripped if stripped else None
+
+                row[clean_key] = clean_value
+
+            yield row
+
+    def iter_normalized_batches(
+        self,
+        dataset: str,
+        payload: bytes,
+        *,
+        batch_size: int = 1000,
+        **context: Any,
+    ) -> Iterator[list[dict]]:
+        self._validate_dataset(dataset)
+
+        if batch_size <= 0:
+            raise ValueError("batch_size must be > 0")
+
+        text = io.TextIOWrapper(
+            io.BytesIO(payload),
+            encoding="utf-8-sig",
+            newline="",
+        )
+
+        batch: list[dict] = []
+
+        try:
+            for row in self._iter_rows(text):
+                batch.append(row)
+
+                if len(batch) >= batch_size:
+                    yield batch
+                    batch = []
+
+            if batch:
+                yield batch
+
+        finally:
+            text.close()
+
+    def iter_normalized_file(
+        self,
+        dataset: str,
+        path: str | Path,
+        *,
+        batch_size: int = 1000,
+        **context: Any,
+    ) -> Iterator[list[dict]]:
+        self._validate_dataset(dataset)
+
+        if batch_size <= 0:
+            raise ValueError("batch_size must be > 0")
+
+        batch: list[dict] = []
+
+        with Path(path).open(
+            "r",
+            encoding="utf-8-sig",
+            newline="",
+        ) as stream:
+            for row in self._iter_rows(stream):
+                batch.append(row)
+
+                if len(batch) >= batch_size:
+                    yield batch
+                    batch = []
+
+        if batch:
+            yield batch
 
     def normalize(
         self,
@@ -80,25 +192,19 @@ class GCATSource(SourceAdapter):
         payload: bytes,
         **context: Any,
     ) -> list[dict]:
+        """Compatibility API.
 
-        # The real TSV header starts with #JCAT; do not discard it as a comment.
-        lines = payload.decode("utf-8-sig").splitlines()
-        lines = [line.lstrip("#") if line.startswith("#JCAT") else line
-                 for line in lines if line.startswith("#JCAT") or not line.startswith("#")]
-        df = pd.read_csv(
-            io.StringIO("\n".join(lines)),
-            sep="\t",
-            dtype=str,
-            low_memory=False,
-        )
+        This intentionally materializes all records. Internal archival
+        ingestion should prefer the batch APIs.
+        """
+        records: list[dict] = []
 
-        df.columns = df.columns.str.strip()
-        df = df.apply(lambda col: col.str.strip())
-        df = df.where(
-            pd.notnull(df),
-            None,
-        )
+        for batch in self.iter_normalized_batches(
+            dataset,
+            payload,
+            batch_size=2000,
+            **context,
+        ):
+            records.extend(batch)
 
-        return df.to_dict(
-            orient="records"
-        )
+        return records
