@@ -16,25 +16,14 @@ class CelesTrakSource(SourceAdapter):
         "satcat",
     )
 
-    GP_URL = (
-        "https://celestrak.org/"
-        "NORAD/elements/gp.php"
-    )
+    GP_URL = "https://celestrak.org/NORAD/elements/gp.php"
 
-    SATCAT_URL = (
-        "https://celestrak.org/"
-        "satcat/records.php"
-    )
+    SATCAT_URL = "https://celestrak.org/satcat/records.php"
 
     def __init__(self) -> None:
         self.session = requests.Session()
 
-        self.session.headers.update(
-            {
-                "User-Agent":
-                    "orbitoby/0.1"
-            }
-        )
+        self.session.headers.update({"User-Agent": "orbitoby/0.1"})
 
     def fetch(
         self,
@@ -47,35 +36,23 @@ class CelesTrakSource(SourceAdapter):
         }
 
         if params.get("norad_id") is not None:
-            query["CATNR"] = str(
-                params["norad_id"]
-            )
+            query["CATNR"] = str(params["norad_id"])
 
         elif params.get("cospar_id"):
-            query["INTDES"] = str(
-                params["cospar_id"]
-            )
+            query["INTDES"] = str(params["cospar_id"])
 
         elif params.get("group"):
-            query["GROUP"] = str(
-                params["group"]
-            )
+            query["GROUP"] = str(params["group"])
 
         elif params.get("name"):
-            query["NAME"] = str(
-                params["name"]
-            )
+            query["NAME"] = str(params["name"])
 
         elif params.get("special"):
-            query["SPECIAL"] = str(
-                params["special"]
-            )
+            query["SPECIAL"] = str(params["special"])
 
         else:
             raise ValueError(
-                "Provide one of: "
-                "norad_id, cospar_id, "
-                "group, name, special."
+                "Provide one of: norad_id, cospar_id, group, name, special."
             )
 
         if dataset == "gp":
@@ -92,9 +69,7 @@ class CelesTrakSource(SourceAdapter):
             }
 
             for python_name, api_name in optional.items():
-                value = params.get(
-                    python_name
-                )
+                value = params.get(python_name)
 
                 if value is not None:
                     query[api_name] = str(
@@ -107,10 +82,7 @@ class CelesTrakSource(SourceAdapter):
                     )
 
         else:
-            raise ValueError(
-                f"Unsupported CelesTrak dataset: "
-                f"{dataset}"
-            )
+            raise ValueError(f"Unsupported CelesTrak dataset: {dataset}")
 
         response = self.session.get(
             url,
@@ -129,9 +101,7 @@ class CelesTrakSource(SourceAdapter):
         **context: Any,
     ) -> list[dict]:
 
-        data = json.loads(
-            payload
-        )
+        data = json.loads(payload)
 
         if isinstance(data, dict):
             return [data]
@@ -139,6 +109,4 @@ class CelesTrakSource(SourceAdapter):
         if isinstance(data, list):
             return data
 
-        raise RuntimeError(
-            "Unexpected CelesTrak response."
-        )
+        raise RuntimeError("Unexpected CelesTrak response.")

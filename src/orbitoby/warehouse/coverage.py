@@ -69,9 +69,7 @@ def missing_ranges(
             )
 
             if cursor <= gap_end:
-                missing.append(
-                    (cursor, gap_end)
-                )
+                missing.append((cursor, gap_end))
 
         # 이미 보유한 구간을 건너뜀
         cursor = max(
@@ -84,8 +82,6 @@ def missing_ranges(
 
     # 마지막 coverage 이후에도 요청 기간이 남아 있는 경우
     if cursor <= end:
-        missing.append(
-            (cursor, end)
-        )
+        missing.append((cursor, end))
 
     return missing

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import requests
@@ -44,14 +44,10 @@ class SpaceTrackSource(SourceAdapter):
             return
 
         if not SPACETRACK_USERNAME:
-            raise RuntimeError(
-                "SPACETRACK_USERNAME is not configured."
-            )
+            raise RuntimeError("SPACETRACK_USERNAME is not configured.")
 
         if not SPACETRACK_PASSWORD:
-            raise RuntimeError(
-                "SPACETRACK_PASSWORD is not configured."
-            )
+            raise RuntimeError("SPACETRACK_PASSWORD is not configured.")
 
         response = self.session.post(
             self.LOGIN_URL,
@@ -71,17 +67,13 @@ class SpaceTrackSource(SourceAdapter):
         except ValueError:
             result = None
 
-        if isinstance(result, dict):
-            if result.get("Login") == "Failed":
-                raise RuntimeError(
-                    "Space-Track login failed. "
-                    "Check username/password and account status."
-                )
+        if isinstance(result, dict) and result.get("Login") == "Failed":
+            raise RuntimeError(
+                "Space-Track login failed. Check username/password and account status."
+            )
 
         if not self.session.cookies:
-            raise RuntimeError(
-                "Space-Track login did not create a session cookie."
-            )
+            raise RuntimeError("Space-Track login did not create a session cookie.")
 
         self._logged_in = True
 
@@ -108,24 +100,16 @@ class SpaceTrackSource(SourceAdapter):
         end = params.get("end")
 
         if dataset != "gp_history":
-            raise ValueError(
-                f"Unsupported Space-Track dataset: {dataset}"
-            )
+            raise ValueError(f"Unsupported Space-Track dataset: {dataset}")
 
         if norad_id is None:
-            raise ValueError(
-                "norad_id is required for gp_history."
-            )
+            raise ValueError("norad_id is required for gp_history.")
 
         if start is None or end is None:
-            raise ValueError(
-                "start and end are required for gp_history."
-            )
+            raise ValueError("start and end are required for gp_history.")
 
         if start > end:
-            raise ValueError(
-                "start must be <= end"
-            )
+            raise ValueError("start must be <= end")
 
         self._login()
 
@@ -171,10 +155,7 @@ class SpaceTrackSource(SourceAdapter):
             ) from exc
 
         if not isinstance(parsed, list):
-            raise RuntimeError(
-                "Unexpected Space-Track response format: "
-                f"{parsed!r}"
-            )
+            raise TypeError(f"Unexpected Space-Track response format: {parsed!r}")
 
         return response.content
 
@@ -194,21 +175,14 @@ class SpaceTrackSource(SourceAdapter):
         """
 
         if dataset != "gp_history":
-            raise ValueError(
-                f"Unsupported Space-Track dataset: {dataset}"
-            )
+            raise ValueError(f"Unsupported Space-Track dataset: {dataset}")
 
         raw = json.loads(payload)
 
         if not isinstance(raw, list):
-            raise RuntimeError(
-                "Unexpected Space-Track payload format."
-            )
+            raise TypeError("Unexpected Space-Track payload format.")
 
-        return [
-            self._normalize_gp(row)
-            for row in raw
-        ]
+        return [self._normalize_gp(row) for row in raw]
 
     # ------------------------------------------------------------------
     # Conversion helpers
@@ -244,10 +218,7 @@ class SpaceTrackSource(SourceAdapter):
         dt = datetime.fromisoformat(value)
 
         if dt.tzinfo is not None:
-            dt = (
-                dt.astimezone(timezone.utc)
-                .replace(tzinfo=None)
-            )
+            dt = dt.astimezone(UTC).replace(tzinfo=None)
 
         return dt
 
@@ -265,75 +236,22 @@ class SpaceTrackSource(SourceAdapter):
         """
 
         return {
-            "gp_id": self._to_int(
-                row.get("GP_ID")
-            ),
-
-            "norad_id": self._to_int(
-                row.get("NORAD_CAT_ID")
-            ),
-
-            "object_id": row.get(
-                "OBJECT_ID"
-            ),
-
-            "object_name": row.get(
-                "OBJECT_NAME"
-            ),
-
-            "epoch": self._to_datetime(
-                row.get("EPOCH")
-            ),
-
-            "mean_motion": self._to_float(
-                row.get("MEAN_MOTION")
-            ),
-
-            "eccentricity": self._to_float(
-                row.get("ECCENTRICITY")
-            ),
-
-            "inclination_deg": self._to_float(
-                row.get("INCLINATION")
-            ),
-
-            "raan_deg": self._to_float(
-                row.get("RA_OF_ASC_NODE")
-            ),
-
-            "arg_pericenter_deg": self._to_float(
-                row.get("ARG_OF_PERICENTER")
-            ),
-
-            "mean_anomaly_deg": self._to_float(
-                row.get("MEAN_ANOMALY")
-            ),
-
-            "bstar": self._to_float(
-                row.get("BSTAR")
-            ),
-
-            "semimajor_axis_km": self._to_float(
-                row.get("SEMIMAJOR_AXIS")
-            ),
-
-            "period_min": self._to_float(
-                row.get("PERIOD")
-            ),
-
-            "apoapsis_km": self._to_float(
-                row.get("APOAPSIS")
-            ),
-
-            "periapsis_km": self._to_float(
-                row.get("PERIAPSIS")
-            ),
-
-            "tle_line1": row.get(
-                "TLE_LINE1"
-            ),
-
-            "tle_line2": row.get(
-                "TLE_LINE2"
-            ),
+            "gp_id": self._to_int(row.get("GP_ID")),
+            "norad_id": self._to_int(row.get("NORAD_CAT_ID")),
+            "object_id": row.get("OBJECT_ID"),
+            "object_name": row.get("OBJECT_NAME"),
+            "epoch": self._to_datetime(row.get("EPOCH")),
+            "mean_motion": self._to_float(row.get("MEAN_MOTION")),
+            "eccentricity": self._to_float(row.get("ECCENTRICITY")),
+            "inclination_deg": self._to_float(row.get("INCLINATION")),
+            "raan_deg": self._to_float(row.get("RA_OF_ASC_NODE")),
+            "arg_pericenter_deg": self._to_float(row.get("ARG_OF_PERICENTER")),
+            "mean_anomaly_deg": self._to_float(row.get("MEAN_ANOMALY")),
+            "bstar": self._to_float(row.get("BSTAR")),
+            "semimajor_axis_km": self._to_float(row.get("SEMIMAJOR_AXIS")),
+            "period_min": self._to_float(row.get("PERIOD")),
+            "apoapsis_km": self._to_float(row.get("APOAPSIS")),
+            "periapsis_km": self._to_float(row.get("PERIAPSIS")),
+            "tle_line1": row.get("TLE_LINE1"),
+            "tle_line2": row.get("TLE_LINE2"),
         }

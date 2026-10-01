@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, ClassVar
 
 import requests
 
@@ -20,40 +20,21 @@ class LaunchLibrarySource(SourceAdapter):
         "programs",
     )
 
-    BASE_URL = (
-        "https://ll.thespacedevs.com/"
-        "2.3.0"
-    )
+    BASE_URL = "https://ll.thespacedevs.com/2.3.0"
 
-    ENDPOINTS = {
-        "payloads":
-            "/payloads/",
-
-        "spacecraft":
-            "/spacecraft/",
-
-        "spacecraft_configurations":
-            "/spacecraft_configurations/",
-
-        "launches":
-            "/launches/",
-
-        "agencies":
-            "/agencies/",
-
-        "programs":
-            "/programs/",
+    ENDPOINTS: ClassVar[dict[str, str]] = {
+        "payloads": "/payloads/",
+        "spacecraft": "/spacecraft/",
+        "spacecraft_configurations": "/spacecraft_configurations/",
+        "launches": "/launches/",
+        "agencies": "/agencies/",
+        "programs": "/programs/",
     }
 
     def __init__(self) -> None:
         self.session = requests.Session()
 
-        self.session.headers.update(
-            {
-                "User-Agent":
-                    "orbitoby/0.1"
-            }
-        )
+        self.session.headers.update({"User-Agent": "orbitoby/0.1"})
 
     def fetch(
         self,
@@ -62,20 +43,12 @@ class LaunchLibrarySource(SourceAdapter):
     ) -> bytes:
 
         try:
-            endpoint = self.ENDPOINTS[
-                dataset
-            ]
+            endpoint = self.ENDPOINTS[dataset]
 
         except KeyError as exc:
-            raise ValueError(
-                f"Unsupported Launch Library "
-                f"dataset: {dataset}"
-            ) from exc
+            raise ValueError(f"Unsupported Launch Library dataset: {dataset}") from exc
 
-        url = (
-            f"{self.BASE_URL}"
-            f"{endpoint}"
-        )
+        url = f"{self.BASE_URL}{endpoint}"
 
         limit = params.pop(
             "limit",
@@ -84,12 +57,7 @@ class LaunchLibrarySource(SourceAdapter):
 
         query = {
             "limit": limit,
-            **{
-                key: value
-                for key, value
-                in params.items()
-                if value is not None
-            },
+            **{key: value for key, value in params.items() if value is not None},
         }
 
         results: list = []
@@ -99,11 +67,7 @@ class LaunchLibrarySource(SourceAdapter):
         while url:
             response = self.session.get(
                 url,
-                params=(
-                    query
-                    if first_request
-                    else None
-                ),
+                params=(query if first_request else None),
                 timeout=60,
             )
 
@@ -113,17 +77,10 @@ class LaunchLibrarySource(SourceAdapter):
 
             first_request = False
 
-            if (
-                isinstance(data, dict)
-                and "results" in data
-            ):
-                results.extend(
-                    data["results"]
-                )
+            if isinstance(data, dict) and "results" in data:
+                results.extend(data["results"])
 
-                url = data.get(
-                    "next"
-                )
+                url = data.get("next")
 
             else:
                 return response.content
@@ -131,9 +88,7 @@ class LaunchLibrarySource(SourceAdapter):
         return json.dumps(
             results,
             ensure_ascii=False,
-        ).encode(
-            "utf-8"
-        )
+        ).encode("utf-8")
 
     def normalize(
         self,
@@ -142,9 +97,7 @@ class LaunchLibrarySource(SourceAdapter):
         **context: Any,
     ) -> list[dict]:
 
-        data = json.loads(
-            payload
-        )
+        data = json.loads(payload)
 
         if isinstance(data, dict):
             return [data]
@@ -152,6 +105,4 @@ class LaunchLibrarySource(SourceAdapter):
         if isinstance(data, list):
             return data
 
-        raise RuntimeError(
-            "Unexpected Launch Library response."
-        )
+        raise RuntimeError("Unexpected Launch Library response.")

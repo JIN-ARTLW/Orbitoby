@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -35,35 +34,18 @@ def save_raw_artifact(
     metadata: dict | None = None,
     extension: str = "json",
 ) -> RawArtifact:
-    retrieved_at = datetime.now(timezone.utc)
+    retrieved_at = datetime.now(UTC)
 
     # 원본 파일이 같은지 확인할 수 있는 fingerprint
     sha256 = hashlib.sha256(payload).hexdigest()
 
-    artifact_id = (
-        f"{retrieved_at:%Y%m%dT%H%M%SZ}_"
-        f"{sha256[:12]}_{uuid4().hex}"
-    )
+    artifact_id = f"{retrieved_at:%Y%m%dT%H%M%SZ}_{sha256[:12]}_{uuid4().hex}"
 
-    object_dir = (
-        f"norad={norad_id}"
-        if norad_id is not None
-        else "global"
-    )
+    object_dir = f"norad={norad_id}" if norad_id is not None else "global"
 
-    year_dir = (
-        str(start.year)
-        if start is not None
-        else str(retrieved_at.year)
-    )
+    year_dir = str(start.year) if start is not None else str(retrieved_at.year)
 
-    directory = (
-        RAW_DIR
-        / source
-        / dataset
-        / object_dir
-        / year_dir
-    )
+    directory = RAW_DIR / source / dataset / object_dir / year_dir
 
     directory.mkdir(
         parents=True,
@@ -75,10 +57,7 @@ def save_raw_artifact(
     # API 원본 그대로 저장
     payload_path.write_bytes(payload)
 
-    manifest_path = (
-        directory
-        / f"{artifact_id}.manifest.json"
-    )
+    manifest_path = directory / f"{artifact_id}.manifest.json"
 
     manifest = {
         "artifact_id": artifact_id,

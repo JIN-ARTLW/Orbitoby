@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, ClassVar
 
 import requests
 
@@ -39,7 +39,7 @@ class SatNOGSSource(SourceAdapter):
 
     BASE_URL = "https://db.satnogs.org/api"
 
-    ENDPOINTS = {
+    ENDPOINTS: ClassVar[dict[str, str]] = {
         "satellites": "/satellites/",
         "tle": "/tle/",
         "tle_historical": "/tle/historical/",
@@ -49,7 +49,7 @@ class SatNOGSSource(SourceAdapter):
 
     # 우리 archive 내부에서만 사용하는 parameter.
     # SatNOGS 서버에는 보내지 않는다.
-    LOCAL_PARAMS = {
+    LOCAL_PARAMS: ClassVar[set[str]] = {
         "limit",
         "local_limit",
     }
@@ -83,23 +83,15 @@ class SatNOGSSource(SourceAdapter):
             endpoint = self.ENDPOINTS[dataset]
 
         except KeyError as exc:
-            raise ValueError(
-                f"Unsupported SatNOGS dataset: {dataset}"
-            ) from exc
+            raise ValueError(f"Unsupported SatNOGS dataset: {dataset}") from exc
 
-        url = (
-            f"{self.BASE_URL}"
-            f"{endpoint}"
-        )
+        url = f"{self.BASE_URL}{endpoint}"
 
         # archive 내부용 parameter 제거
         remote_params = {
             key: value
             for key, value in params.items()
-            if (
-                value is not None
-                and key not in self.LOCAL_PARAMS
-            )
+            if (value is not None and key not in self.LOCAL_PARAMS)
         }
 
         response = self.session.get(
@@ -135,9 +127,7 @@ class SatNOGSSource(SourceAdapter):
         limit/local_limit이 있으면 여기서 로컬 slicing한다.
         """
 
-        data = json.loads(
-            payload
-        )
+        data = json.loads(payload)
 
         if isinstance(data, dict):
             if "results" in data:
@@ -149,9 +139,7 @@ class SatNOGSSource(SourceAdapter):
             records = data
 
         else:
-            raise RuntimeError(
-                "Unexpected SatNOGS response format."
-            )
+            raise TypeError("Unexpected SatNOGS response format.")
 
         limit = context.get(
             "local_limit",
@@ -162,9 +150,7 @@ class SatNOGSSource(SourceAdapter):
             limit = int(limit)
 
             if limit < 0:
-                raise ValueError(
-                    "limit must be >= 0"
-                )
+                raise ValueError("limit must be >= 0")
 
             records = records[:limit]
 

@@ -5,18 +5,21 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 load_dotenv(PROJECT_ROOT / ".env")
 
 
-DATA_DIR = Path(
-    os.getenv(
-        "ORBITOBY_DATA_DIR",
-        str(Path.home() / ".orbitoby"),
+DATA_DIR = (
+    Path(
+        os.getenv(
+            "ORBITOBY_DATA_DIR",
+            str(Path.home() / ".orbitoby"),
+        )
     )
-).expanduser().resolve()
+    .expanduser()
+    .resolve()
+)
 
 RAW_DIR = DATA_DIR / "raw"
 WAREHOUSE_DIR = DATA_DIR / "warehouse"

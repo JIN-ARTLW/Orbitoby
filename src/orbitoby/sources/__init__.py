@@ -9,14 +9,13 @@ from orbitoby.sources.registry import build_sources
 from orbitoby.sources.satnogs import SatNOGSSource
 from orbitoby.sources.spacetrack import SpaceTrackSource
 
-
 __all__ = [
-    "SourceAdapter",
-    "SpaceTrackSource",
     "CelesTrakSource",
-    "NoaaSource",
-    "SatNOGSSource",
     "GCATSource",
     "LaunchLibrarySource",
+    "NoaaSource",
+    "SatNOGSSource",
+    "SourceAdapter",
+    "SpaceTrackSource",
     "build_sources",
 ]
