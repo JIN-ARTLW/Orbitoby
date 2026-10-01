@@ -147,6 +147,106 @@ def builtin_source_metadata() -> dict[str, SourceMetadata]:
             description_en=("Solar and geospace weather products."),
             description_ko=("태양 및 지구우주환경 우주기상 데이터."),
         ),
+        "gfz": SourceMetadata(
+            name="gfz",
+            title="GFZ Geomagnetic Indices",
+            homepage="https://kp.gfz.de/en",
+            docs_url="https://kp.gfz.de/en/data",
+            auth="none",
+            status="stable",
+            categories=(
+                "space_weather_series",
+                "geomagnetic",
+                "solar",
+            ),
+            host_allowlist=("kp.gfz.de",),
+            description_en=(
+                "Official Kp and derived geomagnetic "
+                "indices, Hpo indices, and selected "
+                "solar indices from GFZ."
+            ),
+            description_ko=(
+                "GFZ의 공식 Kp 및 파생 지자기 지수, Hpo 지수와 일부 태양 지수."
+            ),
+            datasets=(
+                DatasetDescriptor(
+                    name="kp",
+                    categories=("geomagnetic",),
+                ),
+                DatasetDescriptor(
+                    name="ap",
+                    categories=("geomagnetic",),
+                ),
+                DatasetDescriptor(
+                    name="ap_daily",
+                    categories=("geomagnetic",),
+                ),
+                DatasetDescriptor(
+                    name="hp30",
+                    categories=("geomagnetic",),
+                ),
+                DatasetDescriptor(
+                    name="hp60",
+                    categories=("geomagnetic",),
+                ),
+                DatasetDescriptor(
+                    name="f107_observed",
+                    categories=("solar",),
+                ),
+                DatasetDescriptor(
+                    name="f107_adjusted",
+                    categories=("solar",),
+                ),
+            ),
+            policy=SourcePolicy(
+                license_name="CC BY 4.0",
+                license_url=("https://creativecommons.org/licenses/by/4.0/"),
+                terms_url=("https://kp.gfz.de/en/about-kp"),
+                citation_required=True,
+                commercial_use="allowed",
+                redistribution="allowed",
+            ),
+        ),
+        "silso": SourceMetadata(
+            name="silso",
+            title=("WDC-SILSO Sunspot Number"),
+            homepage=("https://www.sidc.be/SILSO/"),
+            docs_url=("https://www.sidc.be/SILSO/datafiles"),
+            auth="none",
+            status="stable",
+            categories=(
+                "space_weather_series",
+                "solar",
+            ),
+            host_allowlist=(
+                "www.sidc.be",
+                "sidc.be",
+            ),
+            description_en=("International Sunspot Number Version 2 from WDC-SILSO."),
+            description_ko=("WDC-SILSO 국제 흑점수 Version 2 데이터."),
+            datasets=(
+                DatasetDescriptor(
+                    name="sunspot_daily",
+                    categories=("solar",),
+                ),
+                DatasetDescriptor(
+                    name="sunspot_monthly",
+                    categories=("solar",),
+                ),
+                DatasetDescriptor(
+                    name=("sunspot_monthly_smoothed"),
+                    categories=("solar",),
+                ),
+            ),
+            policy=SourcePolicy(
+                license_name=("CC BY-NC 4.0"),
+                license_url=("https://creativecommons.org/licenses/by-nc/4.0/"),
+                terms_url=("https://www.sidc.be/SILSO/aboutSILSO"),
+                citation_required=True,
+                commercial_use="restricted",
+                redistribution="allowed",
+            ),
+        ),
         "satnogs": SourceMetadata(
             name="satnogs",
             title="SatNOGS DB",

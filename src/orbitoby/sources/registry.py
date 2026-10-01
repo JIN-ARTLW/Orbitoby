@@ -24,6 +24,7 @@ from orbitoby.sources.declarative import (
 from orbitoby.sources.gcat import (
     GCATSource,
 )
+from orbitoby.sources.gfz import GFZSource
 from orbitoby.sources.launchlibrary import (
     LaunchLibrarySource,
 )
@@ -39,6 +40,7 @@ from orbitoby.sources.plugins import (
 from orbitoby.sources.satnogs import (
     SatNOGSSource,
 )
+from orbitoby.sources.silso import SILSOSource
 from orbitoby.sources.spacetrack import (
     SpaceTrackSource,
 )
@@ -57,6 +59,8 @@ def _builtin_sources(
         SpaceTrackSource(credentials=credentials),
         CelesTrakSource(),
         NoaaSource(),
+        GFZSource(),
+        SILSOSource(),
         SatNOGSSource(),
         GCATSource(),
         LaunchLibrarySource(),
