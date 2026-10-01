@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
+from typing import Any, Self
 
 import pandas as pd
 
@@ -10,14 +10,15 @@ from orbitoby.archive.raw import (
     save_raw_artifact,
 )
 from orbitoby.catalogue import CatalogueAPI
-from orbitoby.warehouse.identity import IdentityStore
+from orbitoby.source_api import SourceAPI
 from orbitoby.sources.base import SourceAdapter
 from orbitoby.sources.registry import build_sources
 from orbitoby.warehouse.coverage import missing_ranges
 from orbitoby.warehouse.db import connect_db
+from orbitoby.warehouse.identity import IdentityStore
 
 
-class Archive(CatalogueAPI):
+class Archive(CatalogueAPI, SourceAPI):
     """
     Orbitoby의 메인 서비스.
 
@@ -69,13 +70,10 @@ class Archive(CatalogueAPI):
             return self.sources[name]
 
         except KeyError as exc:
-            available = ", ".join(
-                sorted(self.sources)
-            )
+            available = ", ".join(sorted(self.sources))
 
             raise ValueError(
-                f"Unknown source: {name}. "
-                f"Available sources: {available}"
+                f"Unknown source: {name}. Available sources: {available}"
             ) from exc
 
     def sources_available(
@@ -85,9 +83,7 @@ class Archive(CatalogueAPI):
         현재 Archive에 등록된 데이터 소스 이름 목록.
         """
 
-        return sorted(
-            self.sources.keys()
-        )
+        return sorted(self.sources.keys())
 
     # ==================================================================
     # Generic source fetch
@@ -134,9 +130,7 @@ class Archive(CatalogueAPI):
         for key in ("start", "end"):
             if params.get(key) is not None:
                 params[key] = self._parse_date(params[key])
-        adapter = self.get_source(
-            source
-        )
+        adapter = self.get_source(source)
 
         # --------------------------------------------------------------
         # 1. 외부 source에서 raw 데이터 다운로드
@@ -152,38 +146,20 @@ class Archive(CatalogueAPI):
         # --------------------------------------------------------------
 
         if archive_raw:
-            extension = (
-                "tsv"
-                if source == "gcat"
-                else "json"
-            )
+            extension = "tsv" if source == "gcat" else "json"
 
             artifact = save_raw_artifact(
                 source=source,
                 dataset=dataset,
                 payload=payload,
-                norad_id=params.get(
-                    "norad_id"
-                ),
-                start=params.get(
-                    "start"
-                ),
-                end=params.get(
-                    "end"
-                ),
-                metadata={
-                    "params": {
-                        key: str(value)
-                        for key, value
-                        in params.items()
-                    }
-                },
+                norad_id=params.get("norad_id"),
+                start=params.get("start"),
+                end=params.get("end"),
+                metadata={"params": {key: str(value) for key, value in params.items()}},
                 extension=extension,
             )
 
-            self._register_artifact(
-                artifact
-            )
+            self._register_artifact(artifact)
 
         # --------------------------------------------------------------
         # 3. source-specific response → Python records
@@ -201,14 +177,13 @@ class Archive(CatalogueAPI):
 
         if archive_raw:
             # Index the full response; SatNOGS local limits only affect display.
-            index_params = {k: v for k, v in params.items()
-                            if k not in {"limit", "local_limit"}}
+            index_params = {
+                k: v for k, v in params.items() if k not in {"limit", "local_limit"}
+            }
             indexed_records = adapter.normalize(dataset, payload, **index_params)
             IdentityStore(self.con).ingest(indexed_records, artifact)
 
-        return pd.DataFrame(
-            records
-        )
+        return pd.DataFrame(records)
 
     # ==================================================================
     # Historical orbit
@@ -252,18 +227,12 @@ class Archive(CatalogueAPI):
                 네트워크 요청 없이 기존 DuckDB 데이터만 조회.
         """
 
-        start_date = self._parse_date(
-            start
-        )
+        start_date = self._parse_date(start)
 
-        end_date = self._parse_date(
-            end
-        )
+        end_date = self._parse_date(end)
 
         if start_date > end_date:
-            raise ValueError(
-                "start must be <= end"
-            )
+            raise ValueError("start must be <= end")
 
         if source != "spacetrack":
             raise ValueError(
@@ -332,15 +301,9 @@ class Archive(CatalogueAPI):
         raw archive + normalization + DuckDB 저장까지 수행한다.
         """
 
-        source = self.get_source(
-            source_name
-        )
+        source = self.get_source(source_name)
 
-        print(
-            f"[{source_name}] downloading "
-            f"NORAD {norad_id}: "
-            f"{start} -> {end}"
-        )
+        print(f"[{source_name}] downloading NORAD {norad_id}: {start} -> {end}")
 
         # --------------------------------------------------------------
         # 1. Space-Track raw 다운로드
@@ -375,9 +338,7 @@ class Archive(CatalogueAPI):
         # 3. artifact provenance 저장
         # --------------------------------------------------------------
 
-        self._register_artifact(
-            artifact
-        )
+        self._register_artifact(artifact)
 
         # --------------------------------------------------------------
         # 4. 내부 공통 형식으로 normalization
@@ -400,11 +361,11 @@ class Archive(CatalogueAPI):
                 artifact=artifact,
                 source_name=source_name,
             )
-    
+
             # --------------------------------------------------------------
             # 6. coverage 기록
             # --------------------------------------------------------------
-    
+
             self._register_coverage(
                 source_name=source_name,
                 dataset="gp_history",
@@ -418,10 +379,7 @@ class Archive(CatalogueAPI):
             self.con.execute("ROLLBACK")
             raise
 
-        print(
-            f"[Archive] stored "
-            f"{len(records):,} orbit records"
-        )
+        print(f"[Archive] stored {len(records):,} orbit records")
 
     # ==================================================================
     # Artifact provenance
@@ -527,27 +485,21 @@ class Archive(CatalogueAPI):
                 AND norad_id = ?
             """
 
-            values.append(
-                norad_id
-            )
+            values.append(norad_id)
 
         if source is not None:
             query += """
                 AND source = ?
             """
 
-            values.append(
-                source
-            )
+            values.append(source)
 
         if dataset is not None:
             query += """
                 AND dataset = ?
             """
 
-            values.append(
-                dataset
-            )
+            values.append(dataset)
 
         query += """
             ORDER BY
@@ -670,27 +622,21 @@ class Archive(CatalogueAPI):
                 AND source = ?
             """
 
-            values.append(
-                source
-            )
+            values.append(source)
 
         if dataset is not None:
             query += """
                 AND dataset = ?
             """
 
-            values.append(
-                dataset
-            )
+            values.append(dataset)
 
         if norad_id is not None:
             query += """
                 AND norad_id = ?
             """
 
-            values.append(
-                norad_id
-            )
+            values.append(norad_id)
 
         query += """
             ORDER BY retrieved_at DESC
@@ -712,7 +658,7 @@ class Archive(CatalogueAPI):
 
         self.con.close()
 
-    def __enter__(self) -> Archive:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
