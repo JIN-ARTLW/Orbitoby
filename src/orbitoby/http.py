@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from collections.abc import Iterable
 from urllib.parse import urljoin, urlparse
 
@@ -51,6 +52,7 @@ class SafeHttpClient:
         )
         self.max_bytes = max_bytes
         self.max_redirects = max_redirects
+        self.retries = retries
 
         self.session = session if session is not None else requests.Session()
 
@@ -166,76 +168,122 @@ class SafeHttpClient:
         }:
             raise ValueError(f"Unsupported HTTP method: {method}")
 
-        current_url = self.validate_url(url)
+        original_url = self.validate_url(url)
+        original_method = method
+        original_headers = dict(headers or {})
+        original_kwargs = dict(kwargs)
 
-        current_headers = dict(headers or {})
+        retryable_body_errors = (
+            requests.exceptions.ChunkedEncodingError,
+            requests.exceptions.ContentDecodingError,
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+        )
 
-        for redirect_index in range(self.max_redirects + 1):
-            response = self.session.request(
-                method,
-                current_url,
-                headers=current_headers,
-                allow_redirects=False,
-                stream=True,
-                timeout=self.timeout,
-                verify=True,
-                **kwargs,
-            )
+        body_attempts = (
+            self.retries + 1
+            if original_method
+            in {
+                "GET",
+                "HEAD",
+            }
+            else 1
+        )
+
+        for body_attempt in range(body_attempts):
+            current_url = original_url
+            current_method = original_method
+            current_headers = dict(original_headers)
+            current_kwargs = dict(original_kwargs)
 
             try:
-                if response.status_code not in _REDIRECT_CODES:
-                    response.raise_for_status()
-
-                    if method == "HEAD":
-                        return b""
-
-                    return self._read_limited(response)
-
-                if redirect_index >= self.max_redirects:
-                    raise RuntimeError("Too many HTTP redirects.")
-
-                location = response.headers.get("Location")
-
-                if not location:
-                    raise RuntimeError("Redirect response has no Location header.")
-
-                next_url = urljoin(
-                    current_url,
-                    location,
-                )
-
-                self.validate_url(next_url)
-
-                old_host = urlparse(current_url).hostname
-
-                new_host = urlparse(next_url).hostname
-
-                if old_host != new_host:
-                    current_headers = self._strip_sensitive_headers(current_headers)
-
-                # RFC-style redirect behaviour for POST → GET.
-                if response.status_code == 303 and method != "HEAD":
-                    method = "GET"
-
-                    kwargs.pop(
-                        "data",
-                        None,
-                    )
-                    kwargs.pop(
-                        "json",
-                        None,
+                for redirect_index in range(self.max_redirects + 1):
+                    response = self.session.request(
+                        current_method,
+                        current_url,
+                        headers=current_headers,
+                        allow_redirects=False,
+                        stream=True,
+                        timeout=self.timeout,
+                        verify=True,
+                        **current_kwargs,
                     )
 
-                current_url = next_url
+                    try:
+                        if response.status_code not in _REDIRECT_CODES:
+                            response.raise_for_status()
 
-                # Query params belong to the original request.
-                kwargs.pop(
-                    "params",
-                    None,
-                )
+                            if current_method == "HEAD":
+                                return b""
 
-            finally:
-                response.close()
+                            return self._read_limited(response)
+
+                        if redirect_index >= self.max_redirects:
+                            raise RuntimeError("Too many HTTP redirects.")
+
+                        location = response.headers.get("Location")
+
+                        if not location:
+                            raise RuntimeError(
+                                "Redirect response has no Location header."
+                            )
+
+                        next_url = urljoin(
+                            current_url,
+                            location,
+                        )
+
+                        self.validate_url(next_url)
+
+                        old_host = urlparse(current_url).hostname
+
+                        new_host = urlparse(next_url).hostname
+
+                        if old_host != new_host:
+                            current_headers = self._strip_sensitive_headers(
+                                current_headers
+                            )
+
+                        # RFC-style redirect behaviour
+                        # for POST -> GET.
+                        if response.status_code == 303 and current_method != "HEAD":
+                            current_method = "GET"
+
+                            current_kwargs.pop(
+                                "data",
+                                None,
+                            )
+                            current_kwargs.pop(
+                                "json",
+                                None,
+                            )
+
+                        current_url = next_url
+
+                        # Query parameters belong only
+                        # to the original request URL.
+                        current_kwargs.pop(
+                            "params",
+                            None,
+                        )
+
+                    finally:
+                        response.close()
+
+                raise RuntimeError("HTTP request failed unexpectedly.")
+
+            except retryable_body_errors:
+                if (
+                    original_method
+                    not in {
+                        "GET",
+                        "HEAD",
+                    }
+                    or body_attempt >= self.retries
+                ):
+                    raise
+
+                time.sleep(0.5 * (2**body_attempt))
 
         raise RuntimeError("HTTP request failed unexpectedly.")
 

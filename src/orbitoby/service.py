@@ -157,7 +157,7 @@ class Archive(CatalogueAPI, SourceAPI):
         # --------------------------------------------------------------
 
         if archive_raw:
-            extension = "tsv" if source == "gcat" else "json"
+            extension = adapter.raw_extension
 
             artifact = save_raw_artifact(
                 source=source,
@@ -186,13 +186,30 @@ class Archive(CatalogueAPI, SourceAPI):
         # 4. DataFrame 반환
         # --------------------------------------------------------------
 
-        if archive_raw:
-            # Index the full response; SatNOGS local limits only affect display.
+        if archive_raw and adapter.should_index_identity(dataset):
+            # Index the full object response;
+            # local display limits only affect
+            # returned records.
             index_params = {
-                k: v for k, v in params.items() if k not in {"limit", "local_limit"}
+                key: value
+                for key, value in params.items()
+                if key
+                not in {
+                    "limit",
+                    "local_limit",
+                }
             }
-            indexed_records = adapter.normalize(dataset, payload, **index_params)
-            IdentityStore(self.con).ingest(indexed_records, artifact)
+
+            indexed_records = adapter.normalize(
+                dataset,
+                payload,
+                **index_params,
+            )
+
+            IdentityStore(self.con).ingest(
+                indexed_records,
+                artifact,
+            )
 
         return pd.DataFrame(records)
 

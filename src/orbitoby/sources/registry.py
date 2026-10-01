@@ -6,19 +6,33 @@ from orbitoby.auth import (
     CredentialManager,
     default_credential_manager,
 )
-from orbitoby.settings import load_settings
-from orbitoby.sources.base import SourceAdapter
+from orbitoby.settings import (
+    load_settings,
+)
+from orbitoby.sources.base import (
+    SourceAdapter,
+)
+from orbitoby.sources.cdaweb import (
+    CDAWebSource,
+)
 from orbitoby.sources.celestrak import (
     CelesTrakSource,
 )
 from orbitoby.sources.declarative import (
     build_declarative_sources,
 )
-from orbitoby.sources.gcat import GCATSource
+from orbitoby.sources.gcat import (
+    GCATSource,
+)
 from orbitoby.sources.launchlibrary import (
     LaunchLibrarySource,
 )
-from orbitoby.sources.noaa import NoaaSource
+from orbitoby.sources.lisird import (
+    LISIRDSource,
+)
+from orbitoby.sources.noaa import (
+    NoaaSource,
+)
 from orbitoby.sources.plugins import (
     load_trusted_source_plugins,
 )
@@ -27,6 +41,9 @@ from orbitoby.sources.satnogs import (
 )
 from orbitoby.sources.spacetrack import (
     SpaceTrackSource,
+)
+from orbitoby.sources.wdc_kyoto import (
+    WDCKyotoSource,
 )
 
 
@@ -43,6 +60,9 @@ def _builtin_sources(
         SatNOGSSource(),
         GCATSource(),
         LaunchLibrarySource(),
+        CDAWebSource(),
+        LISIRDSource(),
+        WDCKyotoSource(),
     ]
 
     return {source.name: source for source in sources}
@@ -70,8 +90,8 @@ def _merge_source(
 
 def build_sources(
     *,
-    settings_path: str | Path | None = None,
-    credentials: CredentialManager | None = None,
+    settings_path: (str | Path | None) = None,
+    credentials: (CredentialManager | None) = None,
 ) -> dict[
     str,
     SourceAdapter,

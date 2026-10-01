@@ -13,6 +13,29 @@ from orbitoby.sources.metadata import source_metadata
 
 class GCATSource(SourceAdapter):
     name = "gcat"
+    identity_datasets = frozenset(
+        {
+            "satcat",
+            "satcat100k",
+            "satcat070k",
+            "satcat270k",
+            "satcat700M",
+            "usatcat",
+            "psatcat",
+            "psatcat100k",
+            "psatcat270k",
+            "pauxcat",
+            "pdeepcat",
+            "pftocat",
+            "plcat",
+            "prcat",
+            "ptmpcat",
+            "rcat",
+            "lprcat",
+            "vimcat",
+        }
+    )
+    raw_extension = "tsv"
 
     datasets = (
         "satcat",

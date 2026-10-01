@@ -11,6 +11,18 @@ class SourceAdapter(ABC):
 
     name: str
     datasets: tuple[str, ...] = ()
+    raw_extension: str = "json"
+
+    # Only object/catalogue datasets belong in the
+    # object identity store. Scientific time series,
+    # events and other datasets remain outside it.
+    identity_datasets: frozenset[str] = frozenset()
+
+    def should_index_identity(
+        self,
+        dataset: str,
+    ) -> bool:
+        return dataset in self.identity_datasets
 
     @abstractmethod
     def fetch(
