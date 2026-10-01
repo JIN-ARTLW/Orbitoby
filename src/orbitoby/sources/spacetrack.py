@@ -4,97 +4,92 @@ import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import requests
+from requests import HTTPError
 
-from orbitoby.config import (
-    SPACETRACK_PASSWORD,
-    SPACETRACK_USERNAME,
+from orbitoby.auth import (
+    CredentialManager,
+    default_credential_manager,
 )
+from orbitoby.http import SafeHttpClient
 from orbitoby.sources.base import SourceAdapter
+from orbitoby.sources.metadata import source_metadata
 
 
 class SpaceTrackSource(SourceAdapter):
-    """
-    Space-Track 데이터 소스 adapter.
-
-    현재 지원:
-    - gp_history
-    """
+    """Authenticated Space-Track GP history source."""
 
     name = "spacetrack"
+
+    datasets = ("gp_history",)
 
     BASE_URL = "https://www.space-track.org"
     LOGIN_URL = f"{BASE_URL}/ajaxauth/login"
 
-    def __init__(self) -> None:
-        self.session = requests.Session()
+    def __init__(
+        self,
+        *,
+        credentials: CredentialManager | None = None,
+    ) -> None:
+        self.metadata = source_metadata(self.name)
+
+        self.credentials = credentials or default_credential_manager()
+
+        self.http = SafeHttpClient(
+            allowed_hosts=(self.metadata.host_allowlist),
+            read_timeout=120.0,
+        )
+
         self._logged_in = False
 
-    # ------------------------------------------------------------------
-    # Authentication
-    # ------------------------------------------------------------------
-
     def _login(self) -> None:
-        """
-        Space-Track 계정으로 로그인하고
-        requests.Session에 인증 상태를 유지한다.
-        """
-
         if self._logged_in:
             return
 
-        if not SPACETRACK_USERNAME:
-            raise RuntimeError("SPACETRACK_USERNAME is not configured.")
-
-        if not SPACETRACK_PASSWORD:
-            raise RuntimeError("SPACETRACK_PASSWORD is not configured.")
-
-        response = self.session.post(
-            self.LOGIN_URL,
-            data={
-                "identity": SPACETRACK_USERNAME,
-                "password": SPACETRACK_PASSWORD,
-            },
-            timeout=30,
+        username = self.credentials.get(
+            "spacetrack",
+            "username",
+            env_name=("SPACETRACK_USERNAME"),
+            required=True,
         )
 
-        response.raise_for_status()
+        password = self.credentials.get(
+            "spacetrack",
+            "password",
+            env_name=("SPACETRACK_PASSWORD"),
+            required=True,
+        )
 
-        # Space-Track은 로그인 실패 시에도 HTTP 200과 함께
-        # {"Login": "Failed"}를 반환할 수 있다.
+        payload = self.http.post(
+            self.LOGIN_URL,
+            data={
+                "identity": username,
+                "password": password,
+            },
+        )
+
         try:
-            result = response.json()
-        except ValueError:
+            result = json.loads(payload)
+        except (
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+        ):
             result = None
 
         if isinstance(result, dict) and result.get("Login") == "Failed":
             raise RuntimeError(
-                "Space-Track login failed. Check username/password and account status."
+                "Space-Track login failed. Check credentials and account status."
             )
 
-        if not self.session.cookies:
+        if not self.http.session.cookies:
             raise RuntimeError("Space-Track login did not create a session cookie.")
 
         self._logged_in = True
-
-    # ------------------------------------------------------------------
-    # Fetch
-    # ------------------------------------------------------------------
 
     def fetch(
         self,
         dataset: str,
         **params: Any,
     ) -> bytes:
-        """
-        Space-Track에서 원본 데이터를 가져온다.
-
-        params 예시:
-            norad_id=228
-            start=date(...)
-            end=date(...)
-        """
-
         norad_id = params.get("norad_id")
         start = params.get("start")
         end = params.get("end")
@@ -113,8 +108,6 @@ class SpaceTrackSource(SourceAdapter):
 
         self._login()
 
-        # 마지막 날짜 하루 전체를 포함하기 위해
-        # query upper bound를 다음 날로 설정
         query_end = end + timedelta(days=1)
 
         url = (
@@ -122,46 +115,54 @@ class SpaceTrackSource(SourceAdapter):
             "/basicspacedata/query"
             "/class/gp_history"
             f"/NORAD_CAT_ID/{norad_id}"
-            f"/EPOCH/{start.isoformat()}--{query_end.isoformat()}"
+            f"/EPOCH/{start.isoformat()}"
+            f"--{query_end.isoformat()}"
             "/orderby/EPOCH%20asc"
             "/format/json"
         )
 
-        response = self.session.get(
-            url,
-            timeout=120,
-        )
+        try:
+            payload = self.http.get(url)
+        except HTTPError as exc:
+            response = exc.response
 
-        if response.status_code == 401:
-            self._logged_in = False
+            if response is not None and response.status_code == 401:
+                self._logged_in = False
 
-            raise RuntimeError(
-                "Space-Track returned HTTP 401 Unauthorized. "
-                "Authentication failed or the session expired."
+                raise RuntimeError(
+                    "Space-Track returned "
+                    "HTTP 401 Unauthorized. "
+                    "Authentication failed "
+                    "or the session expired."
+                ) from exc
+
+            raise
+
+        try:
+            parsed = json.loads(payload)
+        except (
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+        ) as exc:
+            preview = payload[:200].decode(
+                "utf-8",
+                errors="replace",
             )
 
-        response.raise_for_status()
-
-        # JSON이 아닌 로그인 페이지나 HTML이 반환되는 경우 탐지
-        try:
-            parsed = response.json()
-
-        except ValueError as exc:
-            preview = response.text[:200]
-
             raise RuntimeError(
-                "Space-Track returned a non-JSON response. "
-                f"Response preview: {preview!r}"
+                "Space-Track returned a "
+                "non-JSON response. "
+                f"Response preview: "
+                f"{preview!r}"
             ) from exc
 
-        if not isinstance(parsed, list):
+        if not isinstance(
+            parsed,
+            list,
+        ):
             raise TypeError(f"Unexpected Space-Track response format: {parsed!r}")
 
-        return response.content
-
-    # ------------------------------------------------------------------
-    # Normalize
-    # ------------------------------------------------------------------
+        return payload
 
     def normalize(
         self,
@@ -169,35 +170,41 @@ class SpaceTrackSource(SourceAdapter):
         payload: bytes,
         **context: Any,
     ) -> list[dict]:
-        """
-        Space-Track raw JSON을
-        orbitoby 내부 형식으로 변환한다.
-        """
+        del context
 
         if dataset != "gp_history":
             raise ValueError(f"Unsupported Space-Track dataset: {dataset}")
 
         raw = json.loads(payload)
 
-        if not isinstance(raw, list):
+        if not isinstance(
+            raw,
+            list,
+        ):
             raise TypeError("Unexpected Space-Track payload format.")
 
         return [self._normalize_gp(row) for row in raw]
 
-    # ------------------------------------------------------------------
-    # Conversion helpers
-    # ------------------------------------------------------------------
-
     @staticmethod
-    def _to_float(value: Any) -> float | None:
-        if value in (None, ""):
+    def _to_float(
+        value: Any,
+    ) -> float | None:
+        if value in (
+            None,
+            "",
+        ):
             return None
 
         return float(value)
 
     @staticmethod
-    def _to_int(value: Any) -> int | None:
-        if value in (None, ""):
+    def _to_int(
+        value: Any,
+    ) -> int | None:
+        if value in (
+            None,
+            "",
+        ):
             return None
 
         return int(value)
@@ -206,10 +213,6 @@ class SpaceTrackSource(SourceAdapter):
     def _to_datetime(
         value: str | None,
     ) -> datetime | None:
-        """
-        Space-Track timestamp를 datetime으로 변환한다.
-        """
-
         if not value:
             return None
 
@@ -222,19 +225,10 @@ class SpaceTrackSource(SourceAdapter):
 
         return dt
 
-    # ------------------------------------------------------------------
-    # GP_HISTORY normalization
-    # ------------------------------------------------------------------
-
     def _normalize_gp(
         self,
         row: dict,
     ) -> dict:
-        """
-        GP_HISTORY record 하나를
-        내부 orbit_elements schema로 변환한다.
-        """
-
         return {
             "gp_id": self._to_int(row.get("GP_ID")),
             "norad_id": self._to_int(row.get("NORAD_CAT_ID")),

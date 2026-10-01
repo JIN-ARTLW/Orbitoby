@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import requests
-
+from orbitoby.http import SafeHttpClient
 from orbitoby.sources.base import SourceAdapter
+from orbitoby.sources.metadata import source_metadata
 
 
 class CelesTrakSource(SourceAdapter):
@@ -20,10 +20,16 @@ class CelesTrakSource(SourceAdapter):
 
     SATCAT_URL = "https://celestrak.org/satcat/records.php"
 
-    def __init__(self) -> None:
-        self.session = requests.Session()
-
-        self.session.headers.update({"User-Agent": "orbitoby/0.1"})
+    def __init__(
+        self,
+        *,
+        http: SafeHttpClient | None = None,
+    ) -> None:
+        self.metadata = source_metadata(self.name)
+        self.http = http or SafeHttpClient(
+            allowed_hosts=(self.metadata.host_allowlist),
+            read_timeout=60.0,
+        )
 
     def fetch(
         self,
@@ -84,15 +90,10 @@ class CelesTrakSource(SourceAdapter):
         else:
             raise ValueError(f"Unsupported CelesTrak dataset: {dataset}")
 
-        response = self.session.get(
+        return self.http.get(
             url,
             params=query,
-            timeout=60,
         )
-
-        response.raise_for_status()
-
-        return response.content
 
     def normalize(
         self,

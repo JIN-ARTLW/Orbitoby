@@ -9,6 +9,7 @@ from orbitoby.archive.raw import (
     RawArtifact,
     save_raw_artifact,
 )
+from orbitoby.auth import CredentialManager
 from orbitoby.catalogue import CatalogueAPI
 from orbitoby.source_api import SourceAPI
 from orbitoby.sources.base import SourceAdapter
@@ -34,11 +35,21 @@ class Archive(CatalogueAPI, SourceAPI):
     8. DataFrame 형태로 사용자에게 반환
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        credentials: CredentialManager | None = None,
+        allow_dotenv: bool = False,
+    ) -> None:
         self.con = connect_db()
 
-        # registry에 등록된 모든 source adapter를 로드한다.
-        self.sources: dict[str, SourceAdapter] = build_sources()
+        self.credentials = credentials or CredentialManager(
+            allow_dotenv=allow_dotenv,
+        )
+
+        self.sources: dict[str, SourceAdapter] = build_sources(
+            credentials=self.credentials
+        )
 
     # ==================================================================
     # General helpers

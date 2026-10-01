@@ -6,9 +6,9 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, TextIO
 
-import requests
-
+from orbitoby.http import SafeHttpClient
 from orbitoby.sources.base import SourceAdapter
+from orbitoby.sources.metadata import source_metadata
 
 
 class GCATSource(SourceAdapter):
@@ -37,17 +37,16 @@ class GCATSource(SourceAdapter):
 
     BASE_URL = "https://planet4589.org/space/gcat/tsv/cat"
 
-    def __init__(self) -> None:
-        self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": "orbitoby/0.1",
-            }
+    def __init__(
+        self,
+        *,
+        http: SafeHttpClient | None = None,
+    ) -> None:
+        self.metadata = source_metadata(self.name)
+        self.http = http or SafeHttpClient(
+            allowed_hosts=(self.metadata.host_allowlist),
+            read_timeout=180.0,
         )
-
-    def _validate_dataset(self, dataset: str) -> None:
-        if dataset not in self.datasets:
-            raise ValueError(f"Unsupported GCAT dataset: {dataset}")
 
     def fetch(
         self,
@@ -58,13 +57,14 @@ class GCATSource(SourceAdapter):
 
         url = f"{self.BASE_URL}/{dataset}.tsv"
 
-        response = self.session.get(
-            url,
-            timeout=180,
-        )
-        response.raise_for_status()
+        return self.http.get(url)
 
-        return response.content
+    def _validate_dataset(
+        self,
+        dataset: str,
+    ) -> None:
+        if dataset not in self.datasets:
+            raise ValueError(f"Unsupported GCAT dataset: {dataset}")
 
     @staticmethod
     def _filtered_lines(

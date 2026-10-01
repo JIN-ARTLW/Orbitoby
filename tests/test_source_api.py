@@ -34,3 +34,12 @@ def test_licenses_preserve_unknown_policy():
     licenses = archive.licenses()
 
     assert licenses[0]["policy"]["redistribution"] == "unknown"
+
+
+def test_source_info_preserves_adapter_datasets():
+    archive = FakeArchive()
+
+    info = archive.source_info("gcat")
+
+    assert "satcat" in info["datasets"]
+    assert "usatcat" in info["datasets"]

@@ -2,27 +2,23 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from orbitoby.settings import (
-    load_settings,
+from orbitoby.auth import (
+    CredentialManager,
+    default_credential_manager,
 )
-from orbitoby.sources.base import (
-    SourceAdapter,
-)
+from orbitoby.settings import load_settings
+from orbitoby.sources.base import SourceAdapter
 from orbitoby.sources.celestrak import (
     CelesTrakSource,
 )
 from orbitoby.sources.declarative import (
     build_declarative_sources,
 )
-from orbitoby.sources.gcat import (
-    GCATSource,
-)
+from orbitoby.sources.gcat import GCATSource
 from orbitoby.sources.launchlibrary import (
     LaunchLibrarySource,
 )
-from orbitoby.sources.noaa import (
-    NoaaSource,
-)
+from orbitoby.sources.noaa import NoaaSource
 from orbitoby.sources.plugins import (
     load_trusted_source_plugins,
 )
@@ -34,12 +30,14 @@ from orbitoby.sources.spacetrack import (
 )
 
 
-def _builtin_sources() -> dict[
+def _builtin_sources(
+    credentials: CredentialManager,
+) -> dict[
     str,
     SourceAdapter,
 ]:
     sources: list[SourceAdapter] = [
-        SpaceTrackSource(),
+        SpaceTrackSource(credentials=credentials),
         CelesTrakSource(),
         NoaaSource(),
         SatNOGSSource(),
@@ -63,7 +61,8 @@ def _merge_source(
         raise RuntimeError(
             f"{kind} source "
             f"{source.name!r} conflicts "
-            "with an already registered source."
+            "with an already registered "
+            "source."
         )
 
     result[source.name] = source
@@ -72,13 +71,16 @@ def _merge_source(
 def build_sources(
     *,
     settings_path: str | Path | None = None,
+    credentials: CredentialManager | None = None,
 ) -> dict[
     str,
     SourceAdapter,
 ]:
     """Build the active local source registry."""
 
-    result = _builtin_sources()
+    manager = credentials or default_credential_manager()
+
+    result = _builtin_sources(manager)
 
     settings = load_settings(settings_path)
 

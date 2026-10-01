@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any, ClassVar
 
-import requests
-
+from orbitoby.http import SafeHttpClient
 from orbitoby.sources.base import SourceAdapter
+from orbitoby.sources.metadata import source_metadata
 
 
 class SatNOGSSource(SourceAdapter):
@@ -54,19 +54,16 @@ class SatNOGSSource(SourceAdapter):
         "local_limit",
     }
 
-    def __init__(self) -> None:
-        self.session = requests.Session()
-
-        self.session.headers.update(
-            {
-                "User-Agent": "orbitoby/0.1",
-                "Accept": "application/json",
-            }
+    def __init__(
+        self,
+        *,
+        http: SafeHttpClient | None = None,
+    ) -> None:
+        self.metadata = source_metadata(self.name)
+        self.http = http or SafeHttpClient(
+            allowed_hosts=(self.metadata.host_allowlist),
+            read_timeout=120.0,
         )
-
-    # ------------------------------------------------------------------
-    # Fetch
-    # ------------------------------------------------------------------
 
     def fetch(
         self,
@@ -94,22 +91,10 @@ class SatNOGSSource(SourceAdapter):
             if (value is not None and key not in self.LOCAL_PARAMS)
         }
 
-        response = self.session.get(
+        return self.http.get(
             url,
             params=remote_params or None,
-            timeout=120,
         )
-
-        if response.status_code >= 400:
-            raise RuntimeError(
-                "SatNOGS request failed.\n"
-                f"dataset: {dataset}\n"
-                f"status: {response.status_code}\n"
-                f"url: {response.url}\n"
-                f"response: {response.text[:500]!r}"
-            )
-
-        return response.content
 
     # ------------------------------------------------------------------
     # Normalize

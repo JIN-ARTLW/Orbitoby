@@ -25,7 +25,13 @@ class SourceAPI:
     def reload_sources(
         self,
     ) -> list[str]:
-        self.sources = build_sources()
+        self.sources = build_sources(
+            credentials=getattr(
+                self,
+                "credentials",
+                None,
+            )
+        )
 
         return sorted(self.sources)
 
@@ -49,13 +55,13 @@ class SourceAPI:
             if metadata is None:
                 metadata = builtin.get(source_name)
 
-            result = {
-                "name": source_name,
-                "datasets": list(adapter.datasets),
-            }
+            result = {}
 
             if metadata is not None:
                 result.update(asdict(metadata))
+
+            result["name"] = source_name
+            result["datasets"] = list(adapter.datasets)
 
             return result
 

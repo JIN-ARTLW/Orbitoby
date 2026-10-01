@@ -292,3 +292,29 @@ class CredentialManager:
         except keyring.errors.PasswordDeleteError:
             # Deleting an already-absent credential is idempotent.
             return
+
+
+_TRUE_VALUES = frozenset(
+    {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+)
+
+
+def default_credential_manager() -> CredentialManager:
+    """Create Orbitoby's default credential resolver.
+
+    Local .env loading is intentionally opt-in through
+    ORBITOBY_ALLOW_DOTENV=1. Importing Orbitoby never loads .env.
+    """
+    raw = os.getenv(
+        "ORBITOBY_ALLOW_DOTENV",
+        "",
+    )
+
+    allow_dotenv = raw.strip().lower() in _TRUE_VALUES
+
+    return CredentialManager(allow_dotenv=allow_dotenv)

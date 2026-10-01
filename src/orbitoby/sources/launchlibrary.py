@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any, ClassVar
 
-import requests
-
+from orbitoby.http import SafeHttpClient
 from orbitoby.sources.base import SourceAdapter
+from orbitoby.sources.metadata import source_metadata
 
 
 class LaunchLibrarySource(SourceAdapter):
@@ -31,10 +31,16 @@ class LaunchLibrarySource(SourceAdapter):
         "programs": "/programs/",
     }
 
-    def __init__(self) -> None:
-        self.session = requests.Session()
-
-        self.session.headers.update({"User-Agent": "orbitoby/0.1"})
+    def __init__(
+        self,
+        *,
+        http: SafeHttpClient | None = None,
+    ) -> None:
+        self.metadata = source_metadata(self.name)
+        self.http = http or SafeHttpClient(
+            allowed_hosts=(self.metadata.host_allowlist),
+            read_timeout=60.0,
+        )
 
     def fetch(
         self,
@@ -65,15 +71,12 @@ class LaunchLibrarySource(SourceAdapter):
         first_request = True
 
         while url:
-            response = self.session.get(
+            payload = self.http.get(
                 url,
                 params=(query if first_request else None),
-                timeout=60,
             )
 
-            response.raise_for_status()
-
-            data = response.json()
+            data = json.loads(payload)
 
             first_request = False
 
@@ -83,7 +86,7 @@ class LaunchLibrarySource(SourceAdapter):
                 url = data.get("next")
 
             else:
-                return response.content
+                return payload
 
         return json.dumps(
             results,

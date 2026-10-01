@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any, ClassVar
 
-import requests
-
+from orbitoby.http import SafeHttpClient
 from orbitoby.sources.base import SourceAdapter
+from orbitoby.sources.metadata import source_metadata
 
 
 class NoaaSource(SourceAdapter):
@@ -37,10 +37,16 @@ class NoaaSource(SourceAdapter):
         "dst_recent": ("https://services.swpc.noaa.gov/products/kyoto-dst.json"),
     }
 
-    def __init__(self) -> None:
-        self.session = requests.Session()
-
-        self.session.headers.update({"User-Agent": "orbitoby/0.1"})
+    def __init__(
+        self,
+        *,
+        http: SafeHttpClient | None = None,
+    ) -> None:
+        self.metadata = source_metadata(self.name)
+        self.http = http or SafeHttpClient(
+            allowed_hosts=(self.metadata.host_allowlist),
+            read_timeout=60.0,
+        )
 
     def fetch(
         self,
@@ -54,14 +60,7 @@ class NoaaSource(SourceAdapter):
         except KeyError as exc:
             raise ValueError(f"Unsupported NOAA dataset: {dataset}") from exc
 
-        response = self.session.get(
-            url,
-            timeout=60,
-        )
-
-        response.raise_for_status()
-
-        return response.content
+        return self.http.get(url)
 
     def normalize(
         self,
