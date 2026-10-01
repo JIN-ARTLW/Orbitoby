@@ -247,6 +247,57 @@ def builtin_source_metadata() -> dict[str, SourceMetadata]:
                 redistribution="allowed",
             ),
         ),
+        "nrcan": SourceMetadata(
+            name="nrcan",
+            title=("Space Weather Canada / DRAO F10.7"),
+            homepage=(
+                "https://spaceweather.gc.ca/"
+                "forecast-prevision/solar-solaire/"
+                "solarflux/sx-en.php"
+            ),
+            docs_url=(
+                "https://spaceweather.gc.ca/"
+                "forecast-prevision/solar-solaire/"
+                "solarflux/sx-3-en.php"
+            ),
+            auth="none",
+            status="stable",
+            categories=(
+                "space_weather_series",
+                "solar",
+            ),
+            host_allowlist=(
+                "spaceweather.gc.ca",
+                "www.spaceweather.gc.ca",
+            ),
+            description_en=(
+                "Canadian 10.7 cm solar radio flux "
+                "measurements with observed, "
+                "1-AU-adjusted, and URSI Series D "
+                "values."
+            ),
+            description_ko=(
+                "캐나다 10.7 cm 태양 전파 플럭스 "
+                "측정값으로 관측값, 1 AU 보정값, "
+                "URSI Series D 값을 제공."
+            ),
+            datasets=(
+                DatasetDescriptor(
+                    name="f107_measurements",
+                    categories=("solar",),
+                    description_en=(
+                        "Three-times-daily F10.7 measurements in solar flux units."
+                    ),
+                    description_ko=("하루 최대 3회 측정되는 F10.7 값(sfu)."),
+                ),
+            ),
+            policy=SourcePolicy(
+                terms_url=("https://www.canada.ca/en/transparency/terms.html"),
+                citation_required=None,
+                commercial_use="unknown",
+                redistribution="unknown",
+            ),
+        ),
         "satnogs": SourceMetadata(
             name="satnogs",
             title="SatNOGS DB",

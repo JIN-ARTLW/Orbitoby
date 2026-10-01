@@ -34,6 +34,7 @@ from orbitoby.sources.lisird import (
 from orbitoby.sources.noaa import (
     NoaaSource,
 )
+from orbitoby.sources.nrcan import NRCanSource
 from orbitoby.sources.plugins import (
     load_trusted_source_plugins,
 )
@@ -59,6 +60,7 @@ def _builtin_sources(
         SpaceTrackSource(credentials=credentials),
         CelesTrakSource(),
         NoaaSource(),
+        NRCanSource(),
         GFZSource(),
         SILSOSource(),
         SatNOGSSource(),
