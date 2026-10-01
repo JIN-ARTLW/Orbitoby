@@ -9,3 +9,21 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+# Local metadata and generated caches
+.DS_Store
+.ruff_cache/
+.pytest_cache/
+
+# Private environment files (keep public examples)
+.env.*
+!.env.example
+!.env.*.example
+
+# User archive and warehouse data
+.orbitoby/
+/raw/
+/warehouse/
+/cache/
+*.duckdb
+*.duckdb.wal
