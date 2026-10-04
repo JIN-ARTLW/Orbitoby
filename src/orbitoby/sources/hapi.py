@@ -25,7 +25,11 @@ class HAPISource(SourceAdapter):
 
     BASE_URL: ClassVar[str] = ""
     REQUEST_STYLE: ClassVar[HAPIRequestStyle] = "3"
+    INCLUDE_HEADER: ClassVar[bool] = False
     PROFILES: ClassVar[dict[str, str]] = {}
+
+    CONNECT_TIMEOUT: ClassVar[float] = 10.0
+    READ_TIMEOUT: ClassVar[float] = 120.0
 
     def __init__(self) -> None:
         if self.name == "hapi":
@@ -41,7 +45,25 @@ class HAPISource(SourceAdapter):
 
         self.http = SafeHttpClient(
             allowed_hosts=self.metadata.host_allowlist,
-            read_timeout=120.0,
+            connect_timeout=self.CONNECT_TIMEOUT,
+            read_timeout=self.READ_TIMEOUT,
+        )
+
+        # Metadata discovery is latency-sensitive and optional.
+        # Keep its QoS separate from scientific data retrieval:
+        # fail fast rather than making catalogue inspection wait
+        # through long data-transfer retry windows.
+        # Keep the originally constructed data client so
+        # later user/test transport injection through ``source.http``
+        # remains authoritative.
+        self._default_http = self.http
+
+        self.metadata_http = SafeHttpClient(
+            allowed_hosts=self.metadata.host_allowlist,
+            connect_timeout=2.5,
+            read_timeout=5.0,
+            retries=0,
+            max_bytes=8 * 1024 * 1024,
         )
 
     @property
@@ -230,10 +252,26 @@ class HAPISource(SourceAdapter):
             endpoint="capabilities",
         )
 
+    def _metadata_client(
+        self,
+    ):
+        """Return the effective metadata transport.
+
+        Orbitoby's default transport uses the fail-fast metadata
+        client.  If callers replace ``source.http`` explicitly,
+        that injected transport remains authoritative for every
+        HAPI endpoint, preserving the adapter injection contract.
+        """
+
+        if self.http is self._default_http:
+            return self.metadata_http
+
+        return self.http
+
     def catalog(
         self,
     ) -> list[dict]:
-        payload = self.http.get(self._endpoint("catalog"))
+        payload = self._metadata_client().get(self._endpoint("catalog"))
 
         result = self._decode_response(
             payload,
@@ -269,7 +307,7 @@ class HAPISource(SourceAdapter):
 
         key = "id" if self.REQUEST_STYLE == "2" else "dataset"
 
-        payload = self.http.get(
+        payload = self._metadata_client().get(
             self._endpoint("info"),
             params={
                 key: remote_id,
@@ -362,6 +400,9 @@ class HAPISource(SourceAdapter):
 
         if parameters is not None:
             query["parameters"] = parameters
+
+        if self.INCLUDE_HEADER:
+            query["include"] = "header"
 
         return self.http.get(
             self._endpoint("data"),

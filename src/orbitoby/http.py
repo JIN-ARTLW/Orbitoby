@@ -173,11 +173,16 @@ class SafeHttpClient:
         original_headers = dict(headers or {})
         original_kwargs = dict(kwargs)
 
+        # Transport-level connect/read/status retries are handled
+        # by urllib3's Retry policy mounted on the session.
+        #
+        # The outer loop is reserved for failures that occur while
+        # consuming an already-created response body.  Retrying
+        # ConnectionError/Timeout here as well would multiply retry
+        # attempts and dramatically increase worst-case latency.
         retryable_body_errors = (
             requests.exceptions.ChunkedEncodingError,
             requests.exceptions.ContentDecodingError,
-            requests.exceptions.ConnectionError,
-            requests.exceptions.Timeout,
         )
 
         body_attempts = (

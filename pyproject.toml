@@ -1,23 +1,48 @@
 [project]
 name = "orbitoby"
 version = "0.1.0"
-description = "Add your description here"
+description = "A provenance-first research toolkit for space-weather and orbital time-series data."
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [
     { name = "Jin Yeseo", email = "jinyeseo.public@gmail.com" }
 ]
 requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = [
+    "astronomy",
+    "space-weather",
+    "space-environment",
+    "satellite",
+    "timeseries",
+    "provenance",
+]
 dependencies = [
     "duckdb>=1.5.5",
     "pandas>=3.0.6",
     "pyarrow>=25.0.1",
     "python-dotenv>=1.2.3",
+    "pytz>=2026.4",
     "requests>=2.34.2",
 ]
 
-[project.scripts]
-orbitoby = "orbitoby:main"
+[project.urls]
+Homepage = "https://github.com/JIN-ARTLW/Orbitoby"
+Repository = "https://github.com/JIN-ARTLW/Orbitoby"
+Issues = "https://github.com/JIN-ARTLW/Orbitoby/issues"
 
+[project.optional-dependencies]
+models = [
+    "pymsis>=0.13,<0.14",
+]
 [build-system]
 requires = ["uv_build>=0.11.19,<0.12.0"]
 build-backend = "uv_build"
@@ -27,3 +52,7 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.8",
 ]
+
+[tool.uv.build-backend]
+source-include = ["docs/**", "examples/**", "scripts/**", "tests/**", "AI_USAGE.md", "CONTRIBUTING.md", "SECURITY.md"]
+source-exclude = ["**/.DS_Store", "**/__pycache__/**", "**/*.pyc"]

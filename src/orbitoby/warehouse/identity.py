@@ -202,6 +202,8 @@ _PROPERTY_MAP = {
         "name": "OBJECT_NAME",
         "object_type": "OBJECT_TYPE",
         "country": "COUNTRY_CODE",
+        "launch_date": "LAUNCH_DATE",
+        "decay_date": "DECAY_DATE",
     },
     "gcat": {
         "name": "Name",
@@ -239,6 +241,33 @@ def properties(source, row):
             try:
                 value = float(value)
             except (TypeError, ValueError):
+                continue
+
+        elif target == "object_type":
+            normalized = {
+                "PAY": "payload",
+                "R/B": "rocket_body",
+                "DEB": "debris",
+                "UNK": "unknown",
+            }.get(str(value).strip().upper())
+
+            if normalized is None:
+                continue
+
+            value = normalized
+
+        elif target in {
+            "launch_date",
+            "decay_date",
+        }:
+            value = str(value).strip()
+
+            if not value:
+                continue
+
+            try:
+                value = date.fromisoformat(value[:10]).isoformat()
+            except ValueError:
                 continue
 
         result[target] = value

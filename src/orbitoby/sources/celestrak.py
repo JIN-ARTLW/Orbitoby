@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import io
 import json
 from typing import Any
 
@@ -26,6 +28,8 @@ class CelesTrakSource(SourceAdapter):
 
     SATCAT_URL = "https://celestrak.org/satcat/records.php"
 
+    SATCAT_BULK_URL = "https://celestrak.org/pub/satcat.csv"
+
     def __init__(
         self,
         *,
@@ -37,11 +41,39 @@ class CelesTrakSource(SourceAdapter):
             read_timeout=60.0,
         )
 
+    def should_index_identity_request(
+        self,
+        dataset: str,
+        **params: Any,
+    ) -> bool:
+        if dataset == "satcat" and params.get("all") is True:
+            return False
+
+        return self.should_index_identity(dataset)
+
+    def raw_extension_for(
+        self,
+        dataset: str,
+        **params: Any,
+    ) -> str:
+        if dataset == "satcat" and params.get("all") is True:
+            return "csv"
+
+        return self.raw_extension
+
     def fetch(
         self,
         dataset: str,
         **params: Any,
     ) -> bytes:
+
+        if dataset == "satcat" and params.get("all") is True:
+            unknown = set(params) - {"all"}
+
+            if unknown:
+                raise ValueError("Bulk CelesTrak SATCAT accepts only all=True.")
+
+            return self.http.get(self.SATCAT_BULK_URL)
 
         query: dict[str, str] = {
             "FORMAT": "JSON",
@@ -107,6 +139,13 @@ class CelesTrakSource(SourceAdapter):
         payload: bytes,
         **context: Any,
     ) -> list[dict]:
+
+        if dataset == "satcat" and context.get("all") is True:
+            decoded = payload.decode("utf-8-sig")
+
+            reader = csv.DictReader(io.StringIO(decoded))
+
+            return [dict(row) for row in reader]
 
         data = json.loads(payload)
 

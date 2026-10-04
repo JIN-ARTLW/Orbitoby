@@ -3,12 +3,15 @@ from __future__ import annotations
 import duckdb
 
 from orbitoby.config import DB_PATH, ensure_data_dirs
+from orbitoby.warehouse.scientific import SCHEMA as SCIENTIFIC_SCHEMA
 
 
 def connect_db() -> duckdb.DuckDBPyConnection:
     ensure_data_dirs()
 
     con = duckdb.connect(str(DB_PATH))
+
+    con.execute("SET TimeZone = 'UTC'")
 
     con.execute(
         """
@@ -82,4 +85,5 @@ def connect_db() -> duckdb.DuckDBPyConnection:
     from orbitoby.warehouse.identity import SCHEMA
 
     con.execute(SCHEMA)
+    con.execute(SCIENTIFIC_SCHEMA)
     return con

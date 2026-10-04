@@ -17,6 +17,7 @@ DATA_DIR = (
 RAW_DIR = DATA_DIR / "raw"
 WAREHOUSE_DIR = DATA_DIR / "warehouse"
 DB_PATH = WAREHOUSE_DIR / "archive.duckdb"
+CANONICAL_DIR = WAREHOUSE_DIR / "canonical"
 
 
 def ensure_data_dirs() -> None:
@@ -25,6 +26,10 @@ def ensure_data_dirs() -> None:
         exist_ok=True,
     )
     WAREHOUSE_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    CANONICAL_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )

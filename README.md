@@ -1,381 +1,151 @@
 # Orbitoby
 
-**Orbitoby** is a local-first Python package for acquiring, preserving, integrating, querying, and managing non-image space and aerospace research data.
+**Orbitoby core never guesses the data.**
 
-**Orbitoby**는 위성·우주물체·우주환경·태양활동·발사·임무 등 비이미지 우주·항공우주 연구 데이터를 수집, 보존, 통합, 조회하고 재현 가능하게 관리하기 위한 local-first Python 패키지입니다.
+Orbitoby는 우주환경·위성 궤도 연구를 위한 provenance-first Python 패키지입니다. 원본 수집, canonical 시계열, exact-time 정렬, catalogue·historical orbit, Swarm 밀도 및 명시적 NRLMSIS 계산을 연결합니다. v0.1.0은 alpha release candidate입니다.
 
-> **Status:** Public development / pre-release  
-> **상태:** 공개 개발 중 / v0.1.0 개발 단계
+Orbitoby is a provenance-first Python toolkit for space-weather and orbital research. It connects raw acquisition, canonical time series, exact-time alignment, catalogues, historical orbit, Swarm density and explicit NRLMSIS evaluation. Version 0.1.0 is an alpha release candidate.
 
-Orbitoby is currently under active public development toward its first substantial public release, **v0.1.0**.
+## 설치 / Installation
 
-The repository already contains a functional prototype, but not every API or data-management feature described in the roadmap has been implemented yet.
+Python ≥3.12. 공개 전에는 검증한 로컬 wheel을 설치합니다. 다음 index 명령은 공개된 배포본을 위한 사용법입니다.
 
-Orbitoby는 현재 첫 본격 공개 릴리스인 **v0.1.0**을 개발하고 있습니다.
+Use Python ≥3.12. Before publication, install the verified local wheel; index commands below are instructions for a published distribution.
 
-현재 저장소에는 실제 동작하는 프로토타입이 포함되어 있지만, 로드맵에 정의된 모든 API와 데이터 관리 기능이 구현된 상태는 아닙니다.
-
----
-
-## Why Orbitoby? / 왜 Orbitoby인가?
-
-Space and aerospace research data are distributed across many providers, archives, formats, authentication systems, time resolutions, update schedules, and licensing conditions.
-
-Orbitoby aims to provide a unified research-oriented data lifecycle:
-
-```text
-discover
-→ acquire
-→ preserve
-→ validate
-→ normalize
-→ integrate
-→ query / derive
-→ export / reproduce
+```bash
+python -m pip install orbitoby
+python -m pip install "orbitoby[models]"
+# 공개 전 로컬 설치 / local installation before publication
+python -m pip install "dist/orbitoby-0.1.0-py3-none-any.whl[models]"
 ```
 
-우주·항공우주 연구 데이터는 여러 기관과 아카이브에 분산되어 있고, 데이터 형식, 인증 방식, 시간 해상도, 갱신 주기, 라이선스 조건도 서로 다릅니다.
+`[models]`는 pymsis를 추가합니다. 기본 탐색·시계열·저장·SVG 플롯에는 필요하지 않습니다. 설치형 CLI entry point는 제공하지 않습니다.
 
-Orbitoby는 이러한 데이터를 하나의 연구 데이터 생애주기로 연결하는 것을 목표로 합니다.
+The models extra adds pymsis; base discovery, time series, storage and SVG plotting do not require it. No installed CLI entry point is provided.
 
----
-
-## Core principles / 핵심 원칙
-
-### Local-first
-
-User research data remains on the user's own machine by default.
-
-사용자의 연구 데이터는 기본적으로 사용자 자신의 컴퓨터에 저장됩니다.
-
-Orbitoby does not require a central database server operated by the maintainer.
-
-Orbitoby 개발자가 중앙 데이터베이스 서버를 운영하는 구조가 아닙니다.
-
-### Raw-first preservation
-
-Original provider responses are preserved whenever legally and technically appropriate, together with checksums and provenance metadata.
-
-가능한 경우 제공처의 원본 응답을 checksum 및 출처 정보와 함께 보존합니다.
-
-### File-first research storage
-
-Raw files and columnar research data are primary research artifacts.
-
-대용량 연구 데이터는 파일 중심으로 관리하며, Parquet / Arrow와 같은 columnar 형식을 활용하는 방향으로 설계합니다.
-
-### Minimal embedded metadata engine
-
-DuckDB may be used internally for lightweight metadata, identity, coverage, and query support.
-
-DuckDB는 사용자 로컬 환경에서 metadata, identity, coverage, 검색 보조 등을 위해 제한적으로 사용하는 embedded engine입니다.
-
-It is an implementation detail, not a hosted Orbitoby database service.
-
-### Provenance-first
-
-Conflicting claims from different providers are preserved rather than silently overwritten.
-
-서로 다른 제공처가 같은 객체에 대해 다른 값을 제공하는 경우 하나를 임의로 덮어쓰지 않고 각 출처의 주장을 보존합니다.
-
-### Explicit scientific transformations
-
-Observed/provider data and modelled/derived data must remain distinguishable.
-
-관측 또는 제공 데이터와 모델·파생 데이터는 명확히 구분합니다.
-
-### Extensible source architecture
-
-Orbitoby is designed to support:
-
-- built-in vetted sources
-- persistent user-defined sources
-- declarative HTTP sources
-- trusted third-party Python plugins
-
-Orbitoby는 기본 제공처뿐 아니라 사용자 정의 source와 외부 plugin으로 확장 가능한 구조를 목표로 합니다.
-
----
-
-## Current prototype / 현재 프로토타입
-
-The current development version includes foundations for:
-
-- immutable raw-response archiving
-- SHA-256 artifact tracking
-- local coverage and cache tracking
-- historical orbital-element storage
-- conservative NORAD / COSPAR identity handling
-- provenance-preserving source records
-- multiple source adapters
-
-현재 개발 버전에는 다음 기능의 기반 구현이 포함되어 있습니다.
-
-- 불변 원본 응답 아카이브
-- SHA-256 artifact 추적
-- 로컬 coverage / cache 관리
-- 과거 궤도요소 저장
-- 보수적인 NORAD / COSPAR 객체 식별
-- 출처가 보존되는 source record
-- 다중 데이터 제공처 adapter
-
-### Existing source adapters / 현재 포함된 adapter
-
-- CelesTrak
-- GCAT
-- Launch Library 2
-- NOAA SWPC
-- SatNOGS
-- Space-Track
-
-Adapter availability does **not** mean that every dataset from that provider has completed Orbitoby's stable-source admission process.
-
-Adapter가 존재한다고 해서 해당 제공처의 모든 데이터셋이 Orbitoby의 최종 stable-source 검증을 완료했다는 뜻은 아닙니다.
-
----
-
-## Target v0.1.0 / v0.1.0 목표
-
-Orbitoby v0.1.0 is intended to be the first substantial general-purpose research-data release, rather than a reduced package built only for a single Science Day project.
-
-v0.1.0은 특정 Science Day 연구에 맞춘 축소판이 아니라, Orbitoby의 첫 범용 연구 데이터 관리 릴리스를 목표로 합니다.
-
-Major targets include:
-
-- hardened source / dataset metadata and policy model
-- secure HTTP handling
-- rate limiting, retries, caching and credential management
-- immutable raw archive and reproducible normalization
-- scalable ingestion for large catalogues and time series
-- file-first research storage
-- lightweight embedded metadata and query support
-- canonical space and aerospace data domains
-- conservative cross-source identity resolution
-- persistent user-defined sources
-- declarative HTTP sources
-- trusted Python plugin discovery
-- high-level research APIs
-- explicit time-series alignment
-- provenance, citation and license reporting
-- CSV and Parquet export
-- Jupyter and Colab workflows
-- orbital derived quantities
-- MSIS-based modelled thermospheric density
-- orbital-decay and drag-related transforms
-- lightweight scientific `.plot()` quick-look support
-- bilingual English / Korean public documentation
-- automated tests, CI and security checks
-- PyPI publication
-- Zenodo version DOI
-
-Detailed planning documents:
-
-- `docs/ORBITOBY_MASTER_PLAN.md`
-- `docs/ORBITOBY_ARCHITECTURE_V0.1.0.md`
-- `docs/ORBITOBY_V0.1.0_CHECKLIST.md`
-
----
-
-## Architecture / 아키텍처
-
-The approved storage direction is:
-
-```text
-External space / aerospace archives
-                ↓
-        Source + Dataset adapters
-                ↓
-    Acquire / Validate / Normalize
-                ↓
-┌────────────────────────────────────┐
-│       User-local Orbitoby data     │
-│                                    │
-│  Raw files + manifests             │
-│  Parquet / Arrow research data     │
-│  Minimal embedded DuckDB metadata  │
-└────────────────────────────────────┘
-                ↓
-      Identity / Query / Derived
-                ↓
-     Python API / CLI / Notebook
-                ↓
-  Export + Provenance + Citation
-```
-
-Orbitoby remains a Python package.
-
-The embedded database is local to each user's installation and does not require the maintainer to operate a central database server.
-
-Orbitoby는 Python 패키지이며, 내부 DuckDB는 각 사용자 환경에 종속되는 로컬 데이터 관리 수단입니다.
-
----
-
-## Intended API / 목표 API
-
-The public API is still evolving toward v0.1.0.
+## Archive 빠른 시작 / Quick start
 
 ```python
 from orbitoby import Archive
 
-archive = Archive()
-
-obj = archive.object(norad_id=25544)
-
-orbit = archive.orbit(
-    norad_id=25544,
-    start="2025-01-01",
-    end="2025-03-01",
-)
-
-weather = archive.space_weather(
-    start="2025-01-01",
-    end="2025-03-01",
-    fields=["f107", "kp", "ap"],
-)
-
-window = archive.window(
-    norad_id=25544,
-    start="2025-01-01",
-    end="2025-03-01",
-    include=["orbit", "physical", "space_weather"],
-)
-
-series = archive.timeseries(
-    norad_id=25544,
-    start="2025-01-01",
-    end="2025-03-01",
-    fields=[
-        "orbit.altitude_km",
-        "space_weather.f107",
-    ],
-)
-
-series.plot()
+with Archive() as archive:
+    print(archive.sources_available())
+    print(archive.datasets(metric="kp", live=False))
+    info = archive.dataset_info("gfz", "kp")
+    kp = archive.timeseries(
+        "kp", source="gfz", dataset="kp", start="2024-05-10", end="2024-05-11"
+    )
+    archive.plot(kp, kind="scatter", title="GFZ Kp").save("kp.svg")
+    window = archive.window(
+        fields=["kp", "ap"], source="gfz", start="2024-05-10", end="2024-05-11"
+    )
+    print(window.data, window.presence)
 ```
 
-Some APIs shown above are target v0.1.0 APIs and may not yet be implemented in the current development snapshot.
+`datasets()`·`dataset_info()`는 정적 또는 명시적 `live=True` 탐색을 지원합니다. provider-native 자료는 `fetch()`로, 지원된 canonical metric은 `timeseries()` 또는 `space_weather()`로 조회합니다. 모든 provider-native dataset에 canonical mapping이 있는 것은 아닙니다.
 
-위 예시 중 일부는 v0.1.0 목표 API이며, 현재 개발 버전에서 아직 구현되지 않았을 수 있습니다.
+Discovery is static unless live lookup is requested. Use fetch() for provider-native data and timeseries()/space_weather() for supported canonical metrics. Native dataset support does not imply canonical mapping.
 
----
+## 과학적 의미 / Scientific semantics
 
-## Installation / 설치
+Canonical 조회와 window는 UTC `[start,end)`입니다. ResearchWindow는 실제 timestamp의 합집합에 exact 정렬하고 `data`, `presence`, `missing_reason`, `provenance`, `units`를 반환합니다. 중복 metric/timestamp는 오류이며 결측값을 보간·평활·resample·ffill·bfill하지 않습니다. 플롯은 line/scatter SVG와 원 데이터·provenance를 반환합니다.
 
-Orbitoby has not yet reached its first PyPI release.
+Canonical queries/windows use UTC [start,end). ResearchWindow aligns the union of actual timestamps and retains values, presence, missing reasons, provenance and units. Duplicate claims raise errors. There is no interpolation, smoothing, resampling or filling. Native plotting returns line/scatter SVG, data and provenance.
 
-Orbitoby는 아직 첫 PyPI 정식 릴리스 전입니다.
+source가 모호하면 명시해야 합니다. `source_preference`는 첫 matching binding을 선택하며 장애 시 다른 source로 자동 fallback하지 않습니다. 기본 `artifact_resolution="all"`은 중복 주장을 보존합니다. 명시적 `preferred`는 우선순위 선택일 뿐 과학적 충돌 해결이 아닙니다. NRCan의 선언된 같은-source mergeable 제품은 함께 반환될 수 있습니다.
 
-### Development installation
+Ambiguous sources require selection. Source preference selects the first matching binding, not runtime outage fallback. Default artifact resolution preserves claims; explicitly requested preferred selection is a priority policy, not scientific adjudication. Declared mergeable products within NRCan can be returned together.
+
+## Population과 historical orbit / Population and orbit
+
+```python
+with Archive(allow_dotenv=True) as archive:
+    candidates = archive.objects(
+        start="2024-05-10",
+        end="2024-05-11",
+        existence="throughout",
+        object_type="payload",
+        sync=True,
+    )
+    orbit = archive.orbit(norad_id=39452, start="2024-05-10", end="2024-05-11")
+    summary = archive.orbit_summary(
+        [39452],
+        start="2024-05-10",
+        end="2024-05-11",
+        periapsis_km=(200, 2000),
+        min_coverage=1.0,
+        sync=False,
+    )
+```
+
+기간 population은 전체 CelesTrak SATCAT의 launch/decay assertion으로 조회합니다. 기본 객체 검색은 로컬이며 `sync=True`로 SATCAT을 갱신합니다. historical orbit은 사용자 credential이 필요한 Space-Track GP_HISTORY이고 날짜 `[start,end)`입니다. 요약 coverage는 실제 레코드가 존재하는 날짜 비율이며 연속 관측을 뜻하지 않습니다.
+
+Period population applies launch/decay assertions from complete CelesTrak SATCAT. Default object searches are local; sync=True refreshes SATCAT. Historical orbit uses authenticated Space-Track GP_HISTORY with date-based [start,end). Summary coverage is the fraction of dates with records, not continuous observation.
+
+## Swarm와 MSIS / Swarm and MSIS
+
+Swarm A/B/C ACC·POD는 관측 기반 provider-derived 밀도이고 NRLMSIS 2.1은 별도 model_output입니다. trajectory는 UTC timestamp·경도/위도 degree·고도 km와 실제 provenance를 제공해야 합니다.
+
+Swarm A/B/C ACC/POD are observation-derived provider products; NRLMSIS 2.1 is separate model output. Supply trajectory UTC timestamps, longitude/latitude in degrees, altitude in kilometres and real provenance.
+
+```python
+# trajectory와 trajectory_parents 구성은 실행 예제를 참고하세요.
+# See the runnable example for trajectory and real parent construction.
+inputs, parents = archive.msis_inputs(
+    trajectory, driver_source="gfz", trajectory_parents=trajectory_parents
+)
+modeled = archive.msis_density(inputs, parents=parents)
+comparison = observed.merge(
+    modeled,
+    on="timestamp",
+    how="outer",
+    suffixes=("_observed", "_model"),
+    validate="one_to_one",
+    indicator=True,
+)
+```
+
+`msis_inputs()`는 명시적으로 GFZ를 선택해 이전 일 F10.7, 완전한 중심 81일 평균, 지정 Ap vector를 구성합니다. 필수 day/bin 누락과 중복 유효 forcing은 오류입니다. 모델 정의 평균은 관측 보간이 아니며 중심 평균은 미래 정보를 사용합니다. 모델 output은 backend/version·parameters·parent lineage를 저장합니다.
+
+Explicit GFZ forcing construction requires the previous-day F10.7, complete centered 81-day mean and defined Ap vector. Missing bins/days and duplicate valid drivers fail. Model-defined means are not observation interpolation; centered means use future information. Model output records versions, parameters and parent lineage.
+
+## 저장·확장 / Storage and extensions
+
+기본 저장소는 `~/.orbitoby`; import 전 `ORBITOBY_DATA_DIR`로 변경합니다. raw payload/manifest/SHA-256, DuckDB metadata, canonical Parquet와 derived/model Parquet를 분리하고 artifact·lineage로 연결합니다. `artifacts()`, `coverage()`, `product_store.lineage()`로 조사합니다.
+
+The default archive is ~/.orbitoby, overridable before import. Raw payloads/manifests/hashes, DuckDB metadata and canonical/derived/model Parquet are separate and linked by artifact IDs and lineage.
+
+HTTPS JSON/CSV/TSV declarative source를 등록하거나 명시적으로 신뢰한 `orbitoby.sources` Python plugin을 확장할 수 있습니다. canonical binding은 명시적으로 정의해야 하며 plugin은 사용자 권한으로 실행됩니다. credential은 runtime/keyring/environment/Colab/opt-in dotenv에서 해석하고 import만으로 .env를 로드하지 않습니다.
+
+Extensions include declarative HTTPS JSON/CSV/TSV and explicitly trusted Python source plugins. Canonical bindings must be explicit; plugins run with user permissions. Credential resolution supports runtime/keyring/environment/Colab/opt-in dotenv without implicit .env loading on import.
+
+## 실행 예제와 연결 검사 / Workflow and connection check
+
+저장소 root에서 순차 실행하세요. 예제는 전체 population→명시적 1개 위성의 historical orbit→F10.7/Kp/Ap/Dst/solar wind→Swarm→MSIS→exact 비교를 시연합니다. 실패 단계는 분리해서 보고합니다.
+
+Run sequentially from the repository root. The example demonstrates complete population, one explicitly selected historical orbit, weather indices, Swarm, MSIS and exact comparison, reporting stage failures separately.
 
 ```bash
-git clone https://github.com/JIN-ARTLW/Orbitoby.git
-cd Orbitoby
-uv sync
+.venv/bin/python examples/science_day.py --allow-dotenv
+.venv/bin/python scripts/check_connections.py --allow-dotenv
 ```
 
-After the first release, the intended installation method is:
+연결 검사는 source 수·API·DB/storage와 주요 provider를 PASS/FAIL/SKIP으로 표시하며 secrets를 출력하지 않습니다. credential 미설정은 SKIP, FAIL이 있으면 exit 1입니다. `--offline`, `--timeout 20`도 지원합니다. 연결 성공은 자료 전체의 완전성 인증이 아닙니다.
 
-```bash
-pip install orbitoby
-```
+Diagnostics report registry, APIs, local storage and key providers without secrets. Missing credentials are SKIP; any FAIL exits 1. Offline mode and per-worker timeout are available. Connectivity does not certify scientific completeness.
 
----
+## 제약·문서·인용 / Limits, documentation and citation
 
-## Public development / 공개 개발
+현재 snapshot의 과거 존재 판정은 당시 catalogue 복원이 아닙니다. 결측 물리/임무 metadata, quality flag, provider revision, GP ID 중복, cache freshness를 사용자가 검토해야 합니다. orbit propagation·항력/인과적 decay·자동 cohort·범용 CLI는 제공하지 않습니다. E2E 성공과 과학적 타당성 검증은 구별합니다.
 
-Orbitoby is developed publicly on GitHub.
+Retrospective existence from a current snapshot is not a historical catalogue reconstruction. Researchers must assess missing metadata, quality, revisions, GP-ID deduplication and cache freshness. Propagation, drag/causal decay, automatic cohorts and a general CLI are outside this release. E2E success is distinct from scientific validation.
 
-Major architecture and scientific decisions are reviewed and approved by the human maintainer.
+- [한·영 위키 / Bilingual wiki](docs/wiki/index.md)
+- [전체 공개 API와 dataset / Complete inventory](docs/wiki/api-inventory.md)
+- [연구 예제 코드 / Research example](examples/science_day.py)
+- [검증 보고서 / Verification report](docs/RELEASE_0_1_0_REPORT.md)
+- [기능 동결 / Feature freeze](docs/adr/2026-10-04-release-freeze.md)
 
-AI tools may assist with:
+소프트웨어 인용: Jin Yeseo, Orbitoby, 사용 버전과 [저장소](https://github.com/JIN-ARTLW/Orbitoby). dataset·model 문헌은 별도로 인용하세요. 확인되지 않은 DOI는 제시하지 않습니다. 코드 라이선스는 [Apache-2.0](LICENSE), 자산·외부 자료 구분은 [NOTICE](NOTICE)를 따릅니다.
 
-- implementation
-- repetitive refactoring
-- documentation
-- test generation
-- debugging
-- research workflow design
-
-AI-generated work is not treated as completed until it has been reviewed and validated.
-
-Orbitoby의 핵심 아키텍처와 연구적 판단은 사람이 검토·승인합니다.
-
-AI는 구현과 반복 작업을 보조하지만, 실제 검토와 테스트를 통과하기 전에는 완료된 작업으로 간주하지 않습니다.
-
-See:
-
-- `CONTRIBUTING.md`
-- `AI_USAGE.md`
-
----
-
-## Scientific development / 연구 활용
-
-Orbitoby is being developed alongside a reproducible research application investigating relationships among solar activity, thermospheric density, and low-Earth-orbit orbital decay.
-
-That study is an application and validation case for Orbitoby.
-
-Orbitoby itself is designed as a broader general-purpose space and aerospace research-data package.
-
-Orbitoby는 태양활동–열권밀도–저궤도 궤도감쇠 연구와 함께 개발되고 있지만, 해당 연구는 첫 활용 및 검증 사례이며 패키지의 전체 사용 범위를 제한하지 않습니다.
-
----
-
-## Licensing / 라이선스
-
-Orbitoby source code is licensed under the **Apache License 2.0**.
-
-Third-party datasets retain their original:
-
-- copyright
-- licenses
-- attribution requirements
-- terms of use
-- redistribution restrictions
-
-Orbitoby 소스 코드는 **Apache License 2.0**으로 배포됩니다.
-
-외부 데이터셋의 권리와 이용 조건은 각 원 제공처의 조건을 따릅니다.
-
-The Toby mascot, photographs, and original brand artwork are not licensed under Apache-2.0 unless explicitly stated otherwise.
-
----
-
-## Security / 보안
-
-Do not commit:
-
-- provider passwords
-- API keys
-- tokens
-- `.env` files
-- private archives
-- user research data
-
-See `SECURITY.md`.
-
----
-
-## Author / 저자
-
-**Jin Yeseo (진예서)**
-
-GitHub: `JIN-ARTLW`  
-Email: `jinyeseo.public@gmail.com`
-
----
-
-## Citation
-
-Formal citation metadata and a Zenodo DOI will be added with the first public software release.
-
-정식 `CITATION.cff`와 Orbitoby Zenodo DOI는 첫 공개 릴리스와 함께 추가될 예정입니다.
-
----
-
-## Project status
-
-**Current:** active public development  
-**Next milestone:** Orbitoby v0.1.0  
-**Distribution target:** PyPI  
-**Archival target:** Zenodo DOI
+Cite Jin Yeseo, Orbitoby, the version used and the repository, plus original datasets and models. No unverified DOI is supplied. Code is Apache-2.0; NOTICE distinguishes assets and external materials.

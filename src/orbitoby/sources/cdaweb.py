@@ -21,6 +21,9 @@ class CDAWebSource(HAPISource):
 
     REQUEST_STYLE = "2"
 
+    # Provider-specific TLS/connect allowance.
+    CONNECT_TIMEOUT = 30.0
+
     PROFILES: ClassVar[dict[str, str]] = {
         "omni_hourly": ("OMNI2_H0_MRG1HR"),
         "omni_1min": ("OMNI_HRO2_1MIN"),

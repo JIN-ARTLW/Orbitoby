@@ -131,8 +131,9 @@ def builtin_source_metadata() -> dict[str, SourceMetadata]:
         ),
         "noaa": SourceMetadata(
             name="noaa",
-            title="NOAA Space Weather Prediction Center",
-            homepage="https://www.swpc.noaa.gov/",
+            title=("NOAA Space Weather Prediction Center"),
+            homepage=("https://www.swpc.noaa.gov/"),
+            docs_url=("https://www.swpc.noaa.gov/products-and-data"),
             auth="none",
             status="stable",
             categories=(
@@ -144,8 +145,131 @@ def builtin_source_metadata() -> dict[str, SourceMetadata]:
                 "services.swpc.noaa.gov",
                 "www.swpc.noaa.gov",
             ),
-            description_en=("Solar and geospace weather products."),
-            description_ko=("태양 및 지구우주환경 우주기상 데이터."),
+            description_en=(
+                "Solar and geospace weather "
+                "products including rolling "
+                "GOES and real-time solar-wind "
+                "measurements."
+            ),
+            description_ko=(
+                "GOES 및 실시간 태양풍 자료를 포함한 태양·지구우주환경 우주기상 데이터."
+            ),
+            datasets=(
+                DatasetDescriptor(
+                    name="goes_xray_1day",
+                    categories=(
+                        "solar",
+                        "space_weather_series",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name=("goes_xray_flares_7day"),
+                    categories=(
+                        "solar",
+                        "space_weather_events",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name=("goes_integral_protons_1day"),
+                    categories=(
+                        "solar",
+                        "particles",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="goes_euvs_1day",
+                    categories=(
+                        "solar",
+                        "space_weather_series",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="rtsw_mag_1m",
+                    categories=(
+                        "solar_wind",
+                        "space_weather_series",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="rtsw_wind_1m",
+                    categories=(
+                        "solar_wind",
+                        "space_weather_series",
+                    ),
+                ),
+            ),
+        ),
+        "donki": SourceMetadata(
+            name="donki",
+            title=("NASA Space Weather DONKI"),
+            homepage=("https://ccmc.gsfc.nasa.gov/DONKI/"),
+            docs_url=("https://ccmc.gsfc.nasa.gov/tools/DONKI/"),
+            auth="none",
+            status="stable",
+            categories=(
+                "space_weather_events",
+                "solar",
+                "solar_wind",
+                "geomagnetic",
+            ),
+            host_allowlist=("ccmc.gsfc.nasa.gov",),
+            description_en=(
+                "NASA DONKI event, analysis, "
+                "model and notification data for "
+                "space-weather activity."
+            ),
+            description_ko=("NASA DONKI의 우주기상 사건, 분석, 모델 및 알림 데이터."),
+            datasets=(
+                DatasetDescriptor(
+                    name="cme",
+                    categories=(
+                        "solar",
+                        "space_weather_events",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="cme_analysis",
+                    categories=(
+                        "solar",
+                        "space_weather_events",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="geomagnetic_storm",
+                    categories=(
+                        "geomagnetic",
+                        "space_weather_events",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="solar_flare",
+                    categories=(
+                        "solar",
+                        "space_weather_events",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="sep",
+                    categories=(
+                        "solar",
+                        "particles",
+                        "space_weather_events",
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="high_speed_stream",
+                    categories=(
+                        "solar_wind",
+                        "space_weather_events",
+                    ),
+                ),
+            ),
+            policy=SourcePolicy(
+                terms_url=("https://api.nasa.gov/"),
+                citation_required=None,
+                commercial_use="unknown",
+                redistribution="unknown",
+            ),
         ),
         "gfz": SourceMetadata(
             name="gfz",
@@ -284,11 +408,46 @@ def builtin_source_metadata() -> dict[str, SourceMetadata]:
             datasets=(
                 DatasetDescriptor(
                     name="f107_measurements",
-                    categories=("solar",),
-                    description_en=(
-                        "Three-times-daily F10.7 measurements in solar flux units."
+                    categories=(
+                        "solar",
+                        "space_weather_series",
                     ),
-                    description_ko=("하루 최대 3회 측정되는 F10.7 값(sfu)."),
+                    description_en=(
+                        "Current NRCan/DRAO F10.7 "
+                        "measurement archive from "
+                        "2004-10-28 onward."
+                    ),
+                    description_ko=("2004-10-28 이후 NRCan/DRAO F10.7 관측 아카이브."),
+                ),
+                DatasetDescriptor(
+                    name="f107_legacy_daily_1947_1996",
+                    categories=(
+                        "solar",
+                        "space_weather_series",
+                    ),
+                    description_en=(
+                        "Legacy official-domain daily "
+                        "F10.7 artifact covering the "
+                        "historical 1947-1996 era."
+                    ),
+                    description_ko=(
+                        "1947-1996 시기의 공식 도메인 레거시 일별 F10.7 자료."
+                    ),
+                ),
+                DatasetDescriptor(
+                    name=("f107_legacy_measurements_1996_2007"),
+                    categories=(
+                        "solar",
+                        "space_weather_series",
+                    ),
+                    description_en=(
+                        "Legacy official-domain "
+                        "multi-daily F10.7 measurements "
+                        "for the 1996-2007 era."
+                    ),
+                    description_ko=(
+                        "1996-2007 시기의 공식 도메인 레거시 다회 F10.7 관측 자료."
+                    ),
                 ),
             ),
             policy=SourcePolicy(
@@ -506,6 +665,166 @@ def builtin_source_metadata() -> dict[str, SourceMetadata]:
                 terms_url=("https://wdc.kugi.kyoto-u.ac.jp/wdc/Sec3.html"),
                 citation_required=True,
                 commercial_use="restricted",
+                redistribution="unknown",
+            ),
+        ),
+        "swarm": SourceMetadata(
+            name="swarm",
+            title="ESA Swarm / VirES",
+            homepage="https://vires.services/",
+            docs_url="https://vires.services/hapi/",
+            auth="none",
+            status="experimental",
+            categories=(
+                "thermosphere",
+                "density",
+                "earth_observation",
+            ),
+            host_allowlist=("vires.services",),
+            description_en=(
+                "ESA Swarm thermospheric mass-density "
+                "observations accessed through the "
+                "VirES HAPI service."
+            ),
+            description_ko=(
+                "VirES HAPI를 통해 제공되는 ESA Swarm 열권 질량밀도 관측 자료."
+            ),
+            datasets=(
+                DatasetDescriptor(
+                    name="density_a_acc",
+                    categories=(
+                        "thermosphere",
+                        "density",
+                    ),
+                    description_en=(
+                        "Swarm A thermospheric density "
+                        "derived from accelerometer and "
+                        "precise-orbit data."
+                    ),
+                    description_ko=(
+                        "가속도계와 정밀궤도 자료로부터 산출된 Swarm A 열권 밀도."
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="density_b_acc",
+                    categories=(
+                        "thermosphere",
+                        "density",
+                    ),
+                    description_en=(
+                        "Swarm B thermospheric density "
+                        "derived from accelerometer and "
+                        "precise-orbit data."
+                    ),
+                    description_ko=(
+                        "가속도계와 정밀궤도 자료로부터 산출된 Swarm B 열권 밀도."
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="density_c_acc",
+                    categories=(
+                        "thermosphere",
+                        "density",
+                    ),
+                    description_en=(
+                        "Swarm C thermospheric density "
+                        "derived from accelerometer and "
+                        "precise-orbit data."
+                    ),
+                    description_ko=(
+                        "가속도계와 정밀궤도 자료로부터 산출된 Swarm C 열권 밀도."
+                    ),
+                ),
+                DatasetDescriptor(
+                    name="density_a_pod",
+                    categories=(
+                        "thermosphere",
+                        "density",
+                    ),
+                    description_en=(
+                        "Swarm A thermospheric density "
+                        "derived from precise-orbit data "
+                        "only."
+                    ),
+                    description_ko=("정밀궤도 자료만으로 산출된 Swarm A 열권 밀도."),
+                ),
+                DatasetDescriptor(
+                    name="density_b_pod",
+                    categories=(
+                        "thermosphere",
+                        "density",
+                    ),
+                    description_en=(
+                        "Swarm B thermospheric density "
+                        "derived from precise-orbit data "
+                        "only."
+                    ),
+                    description_ko=("정밀궤도 자료만으로 산출된 Swarm B 열권 밀도."),
+                ),
+                DatasetDescriptor(
+                    name="density_c_pod",
+                    categories=(
+                        "thermosphere",
+                        "density",
+                    ),
+                    description_en=(
+                        "Swarm C thermospheric density "
+                        "derived from precise-orbit data "
+                        "only."
+                    ),
+                    description_ko=("정밀궤도 자료만으로 산출된 Swarm C 열권 밀도."),
+                ),
+            ),
+            policy=SourcePolicy(
+                terms_url=("https://vires.services/data_terms"),
+                citation_required=True,
+                commercial_use="unknown",
+                redistribution="restricted",
+            ),
+        ),
+        "discos": SourceMetadata(
+            name="discos",
+            title="ESA DISCOS",
+            homepage=("https://discosweb.esoc.esa.int/"),
+            docs_url=("https://discosweb.esoc.esa.int/"),
+            auth="token",
+            status="restricted",
+            categories=(
+                "objects",
+                "physical_properties",
+                "space_debris",
+            ),
+            host_allowlist=("discosweb.esoc.esa.int",),
+            description_en=(
+                "Authenticated ESA DISCOS "
+                "space-object metadata including "
+                "physical characteristics, "
+                "registration and launch-related "
+                "information."
+            ),
+            description_ko=(
+                "인증을 통해 접근하는 ESA DISCOS "
+                "우주물체 메타데이터로 질량, 형상, "
+                "치수, 등록 및 발사 관련 정보를 제공."
+            ),
+            datasets=(
+                DatasetDescriptor(
+                    name="objects",
+                    categories=(
+                        "objects",
+                        "physical_properties",
+                    ),
+                    description_en=(
+                        "DISCOS object records queried by NORAD or DISCOS identifier."
+                    ),
+                    description_ko=(
+                        "NORAD 또는 DISCOS 식별자로 조회하는 우주물체 레코드."
+                    ),
+                ),
+            ),
+            policy=SourcePolicy(
+                citation_required=True,
+                commercial_use="unknown",
                 redistribution="unknown",
             ),
         ),

@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 
 class SourceAdapter(ABC):
@@ -13,16 +13,39 @@ class SourceAdapter(ABC):
     datasets: tuple[str, ...] = ()
     raw_extension: str = "json"
 
+    # Optional canonical scientific mappings exposed by
+    # third-party/user adapters.  Kept untyped here to avoid
+    # coupling the adapter base class back to canonical.py.
+    canonical_bindings: ClassVar[tuple[object, ...]] = ()
+
     # Only object/catalogue datasets belong in the
     # object identity store. Scientific time series,
     # events and other datasets remain outside it.
     identity_datasets: frozenset[str] = frozenset()
+
+    def raw_extension_for(
+        self,
+        dataset: str,
+        **params: Any,
+    ) -> str:
+        """Return the raw payload extension for one request."""
+        del dataset, params
+        return self.raw_extension
 
     def should_index_identity(
         self,
         dataset: str,
     ) -> bool:
         return dataset in self.identity_datasets
+
+    def should_index_identity_request(
+        self,
+        dataset: str,
+        **params: Any,
+    ) -> bool:
+        """Return whether one provider request should enter identity storage."""
+        del params
+        return self.should_index_identity(dataset)
 
     @abstractmethod
     def fetch(

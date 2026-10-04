@@ -21,6 +21,8 @@ from orbitoby.sources.celestrak import (
 from orbitoby.sources.declarative import (
     build_declarative_sources,
 )
+from orbitoby.sources.discos import DiscosSource
+from orbitoby.sources.donki import DONKISource
 from orbitoby.sources.gcat import (
     GCATSource,
 )
@@ -45,6 +47,7 @@ from orbitoby.sources.silso import SILSOSource
 from orbitoby.sources.spacetrack import (
     SpaceTrackSource,
 )
+from orbitoby.sources.swarm import SwarmSource
 from orbitoby.sources.wdc_kyoto import (
     WDCKyotoSource,
 )
@@ -60,6 +63,7 @@ def _builtin_sources(
         SpaceTrackSource(credentials=credentials),
         CelesTrakSource(),
         NoaaSource(),
+        DONKISource(),
         NRCanSource(),
         GFZSource(),
         SILSOSource(),
@@ -69,6 +73,8 @@ def _builtin_sources(
         CDAWebSource(),
         LISIRDSource(),
         WDCKyotoSource(),
+        SwarmSource(),
+        DiscosSource(credentials=credentials),
     ]
 
     return {source.name: source for source in sources}

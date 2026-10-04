@@ -66,6 +66,26 @@ class LISIRDSource(HAPISource):
             http=self.http,
         )
 
+        # Preserve explicit ``source.latis`` replacement
+        # semantics just as HAPI preserves ``source.http``.
+        self._default_latis = self.latis
+
+        self.metadata_latis = LaTiSClient(
+            base_url=self.LATIS_BASE_URL,
+            allowed_hosts=(self.metadata.host_allowlist),
+            http=self.metadata_http,
+        )
+
+    def _metadata_latis_client(
+        self,
+    ):
+        """Return the effective LaTiS metadata transport."""
+
+        if self.latis is self._default_latis:
+            return self.metadata_latis
+
+        return self.latis
+
     def _latis_dataset_id(
         self,
         dataset: str,
@@ -84,7 +104,7 @@ class LISIRDSource(HAPISource):
 
         remote_id = self.LATIS_PROFILES[dataset]
 
-        payload = self.latis.dds(remote_id)
+        payload = self._metadata_latis_client().dds(remote_id)
 
         try:
             descriptor = payload.decode("utf-8")
