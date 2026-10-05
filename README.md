@@ -1,22 +1,24 @@
 # Orbitoby
 
+<p align="center">
+  <img src="docs/assets/orbitoby_banner.png" alt="Toby, the Orbitoby mascot">
+</p>
+
 **Orbitoby core never guesses the data.**
 
-Orbitoby는 우주환경·위성 궤도 연구를 위한 provenance-first Python 패키지입니다. 원본 수집, canonical 시계열, exact-time 정렬, catalogue·historical orbit, Swarm 밀도 및 명시적 NRLMSIS 계산을 연결합니다. v0.1.0은 alpha release candidate입니다.
+Orbitoby는 우주환경·위성 궤도 연구를 위한 provenance-first Python 패키지입니다. 원본 수집, canonical 시계열, exact-time 정렬, catalogue·historical orbit, Swarm 밀도 및 명시적 NRLMSIS 계산을 연결합니다. v0.1.1은 현재 공개된 alpha release입니다.
 
-Orbitoby is a provenance-first Python toolkit for space-weather and orbital research. It connects raw acquisition, canonical time series, exact-time alignment, catalogues, historical orbit, Swarm density and explicit NRLMSIS evaluation. Version 0.1.0 is an alpha release candidate.
+Orbitoby is a provenance-first Python toolkit for space-weather and orbital research. It connects raw acquisition, canonical time series, exact-time alignment, catalogues, historical orbit, Swarm density and explicit NRLMSIS evaluation. Version 0.1.1 is the current public alpha release.
 
 ## 설치 / Installation
 
-Python ≥3.12. 공개 전에는 검증한 로컬 wheel을 설치합니다. 다음 index 명령은 공개된 배포본을 위한 사용법입니다.
+Python ≥3.12. Orbitoby는 PyPI에서 직접 설치할 수 있습니다.
 
-Use Python ≥3.12. Before publication, install the verified local wheel; index commands below are instructions for a published distribution.
+Use Python ≥3.12. Orbitoby can be installed directly from PyPI.
 
 ```bash
 python -m pip install orbitoby
 python -m pip install "orbitoby[models]"
-# 공개 전 로컬 설치 / local installation before publication
-python -m pip install "dist/orbitoby-0.1.0-py3-none-any.whl[models]"
 ```
 
 `[models]`는 pymsis를 추가합니다. 기본 탐색·시계열·저장·SVG 플롯에는 필요하지 않습니다. 설치형 CLI entry point는 제공하지 않습니다.
@@ -140,10 +142,10 @@ Diagnostics report registry, APIs, local storage and key providers without secre
 
 Retrospective existence from a current snapshot is not a historical catalogue reconstruction. Researchers must assess missing metadata, quality, revisions, GP-ID deduplication and cache freshness. Propagation, drag/causal decay, automatic cohorts and a general CLI are outside this release. E2E success is distinct from scientific validation.
 
-- [한·영 위키 / Bilingual wiki](docs/wiki/index.md)
-- [전체 공개 API와 dataset / Complete inventory](docs/wiki/api-inventory.md)
+- [한·영 위키 / Bilingual wiki](https://jin-artlw.github.io/Orbitoby/)
+- [전체 공개 API와 dataset / Complete inventory](https://jin-artlw.github.io/Orbitoby/api-inventory/)
 - [연구 예제 코드 / Research example](examples/science_day.py)
-- [검증 보고서 / Verification report](docs/RELEASE_0_1_0_REPORT.md)
+- [검증 보고서 / Verification report](docs/RELEASE_0_1_1_REPORT.md)
 - [기능 동결 / Feature freeze](docs/adr/2026-10-04-release-freeze.md)
 
 소프트웨어 인용: Jin Yeseo, Orbitoby, 사용 버전과 [저장소](https://github.com/JIN-ARTLW/Orbitoby). dataset·model 문헌은 별도로 인용하세요. 확인되지 않은 DOI는 제시하지 않습니다. 코드 라이선스는 [Apache-2.0](LICENSE), 자산·외부 자료 구분은 [NOTICE](NOTICE)를 따릅니다.

@@ -27,3 +27,5 @@ wheels/
 /cache/
 *.duckdb
 *.duckdb.wal
+
+site/

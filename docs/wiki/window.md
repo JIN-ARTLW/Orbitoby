@@ -20,3 +20,32 @@ The object contains values, original-row presence, provider missing reasons, lon
 `window()`에 `alignment`, `cadence`, `norad_id` 인자는 없습니다. 관측/model은 동일 metric이므로 한 pivot에 몰아넣지 말고 별도 표를 exact merge하며 one-to-one 검증과 미일치 개수를 확인하세요.
 
 There are no alignment, cadence or norad_id arguments. Observed/model density share a metric name; compare separate frames with a validated exact merge and count unmatched timestamps.
+
+
+## 반환 객체 읽기 / Reading a ResearchWindow
+
+```python
+window = archive.window(
+    fields=["kp", "ap"],
+    source="gfz",
+    start="2024-05-10",
+    end="2024-05-11",
+)
+
+print(window.metrics)
+print(window.units)
+print(window.data.head())
+print(window.presence.head())
+print(window.missing_reason.head())
+```
+
+- `data`: exact-aligned value table
+- `presence`: 해당 timestamp/metric 원 행 존재 여부
+- `missing_reason`: provider가 표현한 결측 사유
+- `provenance`: 정렬 이전 long-form provenance
+- `units`: metric별 단위
+- `metrics`: metric 순서
+
+`to_numpy()`는 값 행렬만 반환하므로 단위와 provenance를 별도로 유지해야 합니다.
+
+`to_numpy()` returns only the value matrix; keep units and provenance alongside it when reproducibility matters.

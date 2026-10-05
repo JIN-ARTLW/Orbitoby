@@ -1,0 +1,69 @@
+site_name: Orbitoby
+site_description: Provenance-first research toolkit for space-weather and orbital time-series data
+site_url: https://jin-artlw.github.io/Orbitoby/
+repo_url: https://github.com/JIN-ARTLW/Orbitoby
+repo_name: JIN-ARTLW/Orbitoby
+
+docs_dir: docs/wiki
+site_dir: site
+
+theme:
+  name: mkdocs
+  language: en
+  navigation_depth: 3
+
+extra_css:
+  - assets/extra.css
+
+plugins:
+  - search
+
+markdown_extensions:
+  - tables
+  - fenced_code
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+
+  - Getting Started:
+      - Overview: overview.md
+      - Installation: installation.md
+      - Quickstart: quickstart.md
+
+  - Core Concepts:
+      - Provenance & Schema: schema.md
+      - Discovery: discovery.md
+      - Providers: providers.md
+
+  - Research APIs:
+      - Catalogue & Objects: catalogue.md
+      - Period Population: population.md
+      - Historical Orbit: orbit.md
+      - Space Weather: space-weather.md
+      - Time Series: timeseries.md
+      - ResearchWindow: window.md
+      - Plotting: plotting.md
+
+  - Models & Specialized Data:
+      - Swarm: swarm.md
+      - NRLMSIS / Models: models.md
+
+  - Archive & Extensions:
+      - Storage & Cache: storage.md
+      - Sources & Plugins: extensions.md
+      - Credentials & Security: security.md
+
+  - Tutorials:
+      - Science Day Workflow: science-day.md
+
+  - Reference:
+      - Full API Inventory: api-inventory.md
+      - Troubleshooting: troubleshooting.md
+      - Limitations: limitations.md
+      - Licensing & Citation: licensing.md
+      - Release & Versioning: release.md
+      - Contributing: contributing.md

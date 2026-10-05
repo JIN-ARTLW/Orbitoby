@@ -1,8 +1,8 @@
 # 모델 / Models
 
-`pip install "orbitoby[models]"`로 pymsis를 추가합니다. 0.1.0은 NRLMSIS 2.1 총 중성 질량밀도(`kg/m^3`)를 지원합니다.
+`pip install "orbitoby[models]"`로 pymsis를 추가합니다. v0.1.1은 NRLMSIS 2.1 총 중성 질량밀도(`kg/m^3`)를 지원합니다.
 
-Install pymsis with `pip install "orbitoby[models]"`. Version 0.1.0 supports NRLMSIS 2.1 total neutral mass density in `kg/m^3`.
+Install pymsis with `pip install "orbitoby[models]"`. Version 0.1.1 supports NRLMSIS 2.1 total neutral mass density in `kg/m^3`.
 
 `orbitoby.models.msis.calculate_msis_density(inputs)`에는 다음 열을 갖는 pandas DataFrame을 넘깁니다.
 

@@ -1,8 +1,8 @@
 # 개요 / Overview
 
-Orbitoby 0.1.0은 raw 자료, canonical 시계열, 우주물체 catalogue, historical orbit 및 명시적 MSIS 계산을 연결하는 연구 패키지입니다. 분석 가설·cohort·항력 계수·통계 결론을 자동 결정하지 않습니다.
+Orbitoby v0.1.1은 raw 자료, canonical 시계열, 우주물체 catalogue, historical orbit 및 명시적 MSIS 계산을 연결하는 연구 패키지입니다. 분석 가설·cohort·항력 계수·통계 결론을 자동 결정하지 않습니다.
 
-Orbitoby 0.1.0 connects raw acquisition, canonical time series, object catalogues, historical orbit and explicit MSIS evaluation. It does not decide hypotheses, cohorts, drag coefficients or statistical conclusions.
+Orbitoby v0.1.1 connects raw acquisition, canonical time series, object catalogues, historical orbit and explicit MSIS evaluation. It does not decide hypotheses, cohorts, drag coefficients or statistical conclusions.
 
 **Orbitoby core never guesses the data.**
 

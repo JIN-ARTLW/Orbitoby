@@ -1,8 +1,8 @@
 # 시계열과 정렬 / Time series and alignment
 
-`archive.timeseries(metric, *, start, end, source=None, dataset=None, ...)`는 long-form DataFrame을 반환합니다. 여러 물리량은 `metric` 대신 `fields=[...]`를 사용하며 둘을 동시에 넘길 수 없습니다. 실행 예제는 [빠른 시작](../../examples/science_day.py)에 있습니다.
+`archive.timeseries(metric, *, start, end, source=None, dataset=None, ...)`는 long-form DataFrame을 반환합니다. 여러 물리량은 `metric` 대신 `fields=[...]`를 사용하며 둘을 동시에 넘길 수 없습니다. 실행 예제는 [빠른 시작](https://github.com/JIN-ARTLW/Orbitoby/blob/main/examples/science_day.py)에 있습니다.
 
-`archive.timeseries(metric, *, start, end, source=None, dataset=None, ...)` returns a long-form DataFrame. For multiple metrics use `fields=[...]` instead of `metric`; do not pass both. See the [quick start](../../examples/science_day.py) for an executable example.
+`archive.timeseries(metric, *, start, end, source=None, dataset=None, ...)` returns a long-form DataFrame. For multiple metrics use `fields=[...]` instead of `metric`; do not pass both. See the [quick start](https://github.com/JIN-ARTLW/Orbitoby/blob/main/examples/science_day.py) for an executable example.
 
 canonical 구간은 UTC `[start, end)`이며 시작 포함·끝 제외입니다. 명시적 `Z` 또는 시간대 포함 입력을 권장합니다. 현재 naive 시각도 UTC로 해석하며, 모호한 시간대 정보를 추정하지 않습니다.
 
@@ -33,3 +33,30 @@ The default `archive_raw=True` path connects raw provenance and the local canoni
 `orbit()`도 날짜 기반 `[start, end)`이며 끝 날짜를 제외합니다. `sync=False`는 로컬 DB만 조회합니다.
 
 `orbit()` also uses date-based `[start, end)`, excluding the end date. `sync=False` queries the local DB only.
+
+
+## 반환 행 읽기 / Reading canonical rows
+
+Canonical DataFrame은 long-form입니다. 대표적으로 `timestamp`, `metric`, `value`, `unit`, `source`, `dataset`, `source_field`, `source_value`, `is_missing`, `missing_reason`, provenance/artifact 관련 정보를 보존합니다.
+
+The canonical DataFrame is long-form. Rows retain the scientific value together with source identity, provider-native context, explicit missingness, and provenance/artifact information.
+
+```python
+print(
+    series[
+        [
+            "timestamp",
+            "metric",
+            "value",
+            "unit",
+            "source",
+            "dataset",
+            "is_missing",
+        ]
+    ].head()
+)
+```
+
+`value`만 추출하기 전에 `unit`, `source`, `dataset`, missingness와 provenance를 함께 확인하는 것을 권장합니다.
+
+Before reducing a series to values alone, inspect units, source/dataset identity, missingness, and provenance.
