@@ -1,6 +1,6 @@
 [project]
 name = "orbitoby"
-version = "0.1.0"
+version = "0.1.1"
 description = "A provenance-first research toolkit for space-weather and orbital time-series data."
 readme = "README.md"
 license = "Apache-2.0"
@@ -26,12 +26,12 @@ keywords = [
     "provenance",
 ]
 dependencies = [
-    "duckdb>=1.5.5",
-    "pandas>=3.0.6",
-    "pyarrow>=25.0.1",
+    "duckdb>=1.3.2",
+    "pandas>=2.2.3",
+    "pyarrow>=23.0.1",
     "python-dotenv>=1.2.3",
-    "pytz>=2026.4",
-    "requests>=2.34.2",
+    "pytz>=2025.2",
+    "requests>=2.32.4",
 ]
 
 [project.urls]
