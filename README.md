@@ -6,6 +6,8 @@
 
 **Orbitoby core never guesses the data.**
 
+📚 **Documentation:** [Orbitoby Wiki](https://jin-artlw.github.io/Orbitoby/)
+
 Orbitoby는 우주환경·위성 궤도 연구를 위한 provenance-first Python 패키지입니다. 원본 수집, canonical 시계열, exact-time 정렬, catalogue·historical orbit, Swarm 밀도 및 명시적 NRLMSIS 계산을 연결합니다. v0.1.1은 현재 공개된 alpha release입니다.
 
 Orbitoby is a provenance-first Python toolkit for space-weather and orbital research. It connects raw acquisition, canonical time series, exact-time alignment, catalogues, historical orbit, Swarm density and explicit NRLMSIS evaluation. Version 0.1.1 is the current public alpha release.
