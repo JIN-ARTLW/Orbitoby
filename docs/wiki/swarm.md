@@ -22,3 +22,44 @@ POD orbit-mean density is a separate provider field, not an Orbitoby average. De
 문서화된 density fill은 결측으로 보존하고 원값·quality_flag·context를 유지합니다. 품질 flag가 있다는 이유로 자동 제거하지 않습니다. 연구자는 flag 의미, 음수/비물리적 density, 위치·시간·coverage를 검토하고 명시적 QC를 정해야 합니다. 정확히 2,880행이어도 모든 행이 사용 가능한 관측이라는 뜻은 아닙니다.
 
 Documented fills become missing values while original values, quality and context remain. Flags do not silently remove records. Researchers must assess flags, nonphysical values, position, time and coverage and define explicit QC. Exactly 2,880 rows do not certify 2,880 usable observations.
+
+
+## Canonical과 source-native / Canonical and source-native
+
+밀도 비교에는 canonical `timeseries()`를 사용하고, provider 고유 좌표·context가 필요하면 `fetch()`를 사용합니다.
+
+Use canonical `timeseries()` for scientific density series and `fetch()` when provider-native coordinates or context are required.
+
+```python
+observed = archive.timeseries(
+    "thermosphere_neutral_mass_density",
+    source="swarm",
+    dataset="density_a_pod",
+    start="2024-05-10",
+    end="2024-05-11",
+)
+
+native = archive.fetch(
+    source="swarm",
+    dataset="density_a_pod",
+    start="2024-05-10",
+    end="2024-05-11",
+)
+```
+
+POD native frame에는 `Timestamp`, `Latitude_GD`, `Longitude_GD`, `Height_GD`와 density 관련 provider fields가 포함됩니다. 이 geodetic 좌표를 MSIS trajectory로 사용할 때 `Height_GD`의 metre 값을 kilometre로 명시적으로 변환합니다.
+
+The native POD frame carries provider-specific geodetic context. For MSIS trajectory construction, convert `Height_GD` from metres to kilometres explicitly.
+
+```python
+trajectory = pd.DataFrame(
+    {
+        "timestamp": pd.to_datetime(native["Timestamp"], utc=True),
+        "latitude_deg": native["Latitude_GD"],
+        "longitude_deg": native["Longitude_GD"],
+        "altitude_km": native["Height_GD"] / 1000.0,
+    }
+)
+```
+
+Canonical density와 native coordinate context는 역할이 다르며 둘 중 하나가 다른 하나를 대체하지 않습니다.

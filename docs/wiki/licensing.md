@@ -1,8 +1,8 @@
 # 라이선스와 인용 / Licensing and citation
 
-Orbitoby 코드의 공식 라이선스는 저장소 [LICENSE](../../LICENSE)의 Apache License 2.0 원문입니다. 법적 원문은 수정·대체하지 않았으며 이 안내는 요약입니다. [NOTICE](../../NOTICE)에는 저작권과 자산 구분이 있습니다.
+Orbitoby 코드의 공식 라이선스는 저장소 [LICENSE](https://github.com/JIN-ARTLW/Orbitoby/blob/main/LICENSE)의 Apache License 2.0 원문입니다. 법적 원문은 수정·대체하지 않았으며 이 안내는 요약입니다. [NOTICE](https://github.com/JIN-ARTLW/Orbitoby/blob/main/NOTICE)에는 저작권과 자산 구분이 있습니다.
 
-The authoritative code license is the original Apache License 2.0 text in [LICENSE](../../LICENSE). It has not been modified or replaced; this guide is a summary. [NOTICE](../../NOTICE) identifies copyright and asset boundaries.
+The authoritative code license is the original Apache License 2.0 text in [LICENSE](https://github.com/JIN-ARTLW/Orbitoby/blob/main/LICENSE). It has not been modified or replaced; this guide is a summary. [NOTICE](https://github.com/JIN-ARTLW/Orbitoby/blob/main/NOTICE) identifies copyright and asset boundaries.
 
 Toby 마스코트·사진·브랜드 원본은 별도 허락이 없는 한 Apache-2.0에 포함되지 않습니다. 외부 dataset·model·backend는 각자의 라이선스·인용·재배포 조건을 따릅니다.
 
