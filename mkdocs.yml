@@ -8,9 +8,21 @@ docs_dir: docs/wiki
 site_dir: site
 
 theme:
-  name: mkdocs
-  language: en
-  navigation_depth: 3
+  name: material
+  logo: assets/toby-logo.png
+  favicon: assets/toby-logo.png
+  language: ko
+  palette:
+    scheme: default
+    primary: white
+    accent: indigo
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - toc.follow
+    - search.suggest
+    - search.highlight
 
 extra_css:
   - assets/extra.css
@@ -29,38 +41,40 @@ markdown_extensions:
 nav:
   - Home: index.md
 
-  - Getting Started:
-      - Overview: overview.md
-      - Installation: installation.md
-      - Quickstart: quickstart.md
+  - 시작하기 / Getting Started:
+      - 0. Orbitoby 소개 / Overview: overview.md
+      - 1. 설치 / Installation: installation.md
+      - 2. 빠른 시작 / Quickstart: quickstart.md
 
-  - Core Concepts:
-      - Provenance & Schema: schema.md
-      - Discovery: discovery.md
-      - Providers: providers.md
+  - 데이터 찾기 / Data Discovery:
+      - 3. Source와 Dataset / Discovery: discovery.md
+      - 4. Providers: providers.md
+      - 5. Provenance와 Schema: schema.md
 
-  - Research APIs:
-      - Catalogue & Objects: catalogue.md
-      - Period Population: population.md
-      - Historical Orbit: orbit.md
-      - Space Weather: space-weather.md
-      - Time Series: timeseries.md
-      - ResearchWindow: window.md
-      - Plotting: plotting.md
+  - 우주물체와 궤도 / Objects & Orbit:
+      - 6. Catalogue: catalogue.md
+      - 7. Period Population: population.md
+      - 8. Historical Orbit: orbit.md
 
-  - Models & Specialized Data:
-      - Swarm: swarm.md
-      - NRLMSIS / Models: models.md
+  - 시계열 연구 / Time-Series Research:
+      - 9. Space Weather: space-weather.md
+      - 10. Time Series: timeseries.md
+      - 11. ResearchWindow: window.md
+      - 12. Plotting: plotting.md
 
-  - Archive & Extensions:
-      - Storage & Cache: storage.md
-      - Sources & Plugins: extensions.md
-      - Credentials & Security: security.md
+  - 전문 데이터와 모델 / Specialized Data & Models:
+      - 13. Swarm: swarm.md
+      - 14. NRLMSIS / Models: models.md
 
-  - Tutorials:
-      - Science Day Workflow: science-day.md
+  - 재현성과 확장 / Reproducibility & Extensions:
+      - 15. Storage & Cache: storage.md
+      - 16. Sources & Plugins: extensions.md
+      - 17. Credentials & Security: security.md
 
-  - Reference:
+  - 실전 / Tutorial:
+      - 18. Science Day Workflow: science-day.md
+
+  - 부록 / Reference:
       - Full API Inventory: api-inventory.md
       - Troubleshooting: troubleshooting.md
       - Limitations: limitations.md
