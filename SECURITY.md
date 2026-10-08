@@ -1,8 +1,8 @@
 # 보안 정책 / Security policy
 
-현재 0.1.0 릴리스 후보를 준비 중입니다. 독립 보안 인증이나 모든 버전의 보안 지원을 주장하지 않습니다. 발견된 문제는 재현 증거와 영향 범위로 평가합니다.
+독립 보안 인증이나 모든 버전의 보안 지원을 주장하지 않습니다. 발견된 문제는 재현 증거와 영향 범위로 평가합니다.
 
-A 0.1.0 release candidate is being prepared. This is not independent security certification or a promise of security support for every version. Evaluate findings using reproducible evidence and impact.
+This is not independent security certification or a promise of security support for every version. Evaluate findings using reproducible evidence and impact.
 
 ## 비밀정보와 확장 / Secrets and extensions
 
