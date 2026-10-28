@@ -29,6 +29,72 @@ _RECORD_FIELDS = (
 )
 
 
+def verified_scientific_artifact_ids(archive, frame):
+    """Attest Core canonical artifact references against persisted lineage.
+
+    All returned rows must resolve. Otherwise no artifact is claimed
+    as verified for the entire result.
+    """
+    required = ("artifact_id", "source", "dataset", "metric")
+
+    if frame.empty or not set(required).issubset(frame.columns):
+        return ()
+
+    references = frame.loc[:, list(required)]
+
+    if references.isna().any().any():
+        return ()
+
+    unique_references = references.drop_duplicates()
+
+    sql = """
+        SELECT 1
+        FROM artifacts AS a
+        JOIN scientific_files AS f
+          ON f.artifact_id = a.artifact_id
+        WHERE a.artifact_id = ?
+          AND a.source = ?
+          AND a.dataset = ?
+          AND f.source = ?
+          AND f.dataset = ?
+          AND f.metric = ?
+          AND f.raw_sha256 = a.sha256
+        LIMIT 1
+    """
+
+    verified = set()
+
+    for artifact_id, source, dataset, metric in unique_references.itertuples(
+        index=False, name=None
+    ):
+        values = (artifact_id, source, dataset, metric)
+
+        if any(not isinstance(value, str) or not value.strip() for value in values):
+            return ()
+
+        if len(artifact_id) > 256:
+            return ()
+
+        match = archive.con.execute(
+            sql,
+            [
+                artifact_id,
+                source,
+                dataset,
+                source,
+                dataset,
+                metric,
+            ],
+        ).fetchone()
+
+        if match is None:
+            return ()
+
+        verified.add(artifact_id)
+
+    return tuple(sorted(verified))
+
+
 def _identifiers(result, field):
     """Return only internal archive identifiers, never provider columns."""
     if field == "artifact_id":

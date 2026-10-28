@@ -97,13 +97,21 @@ class Study:
                 source=provider,
             )
 
-            return DataResult(
+            from orbitoby._easy_lineage import verified_scientific_artifact_ids
+
+            result = DataResult(
                 frame,
                 name=metric,
                 start=self.start,
                 end=self.end,
                 source=provider,
             )
+
+            result._raw_artifact_ids = verified_scientific_artifact_ids(
+                self._core,
+                frame,
+            )
+            return result
 
         recommended = tuple(dict.fromkeys(provider for _, provider in selected))
 
