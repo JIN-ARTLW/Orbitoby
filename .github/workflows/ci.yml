@@ -41,12 +41,12 @@ jobs:
 
       - name: Ruff
         run: |
-          uv run --group dev --extra models ruff check .
-          uv run --group dev --extra models ruff format --check .
+          uv run --python "${{ matrix.python-version }}" --group dev --extra models ruff check .
+          uv run --python "${{ matrix.python-version }}" --group dev --extra models ruff format --check .
 
       - name: Tests
         run: |
-          uv run --group dev --extra models python -m pytest -q
+          uv run --python "${{ matrix.python-version }}" --group dev --extra models python -m pytest -q
 
 
   colab-baseline:
@@ -172,10 +172,10 @@ jobs:
       - name: Find wheel
         shell: bash
         run: |
-          WHEEL="$(find dist -maxdepth 1 -type f -name 'orbitoby-0.1.1-*.whl' -print | head -n 1)"
+          WHEEL="$(find dist -maxdepth 1 -type f -name 'orbitoby-0.1.2-*.whl' -print | head -n 1)"
 
           if [ -z "$WHEEL" ]; then
-            echo "orbitoby 0.1.1 wheel not found"
+            echo "orbitoby 0.1.2 wheel not found"
             exit 1
           fi
 

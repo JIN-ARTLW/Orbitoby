@@ -5,7 +5,6 @@ No network access, provider login or archive mutations.
 """
 
 import inspect
-from pathlib import Path
 
 import orbitoby as ob
 from orbitoby._easy import Study
