@@ -118,6 +118,10 @@ def plot_orbit(
         source=result.requested_source,
     )
 
+    # Retain only the parent result's internally verified raw lineage.
+    # Never infer verified IDs from provider-supplied data columns.
+    data._raw_artifact_ids = tuple(getattr(result, "_raw_artifact_ids", ()))
+
     if kind == "auto":
         kind = "scatter"
 
