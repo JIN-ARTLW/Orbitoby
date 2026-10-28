@@ -6,6 +6,7 @@ from typing import Any, Self
 
 import pandas as pd
 
+from orbitoby._safe_request_metadata import safe_request_metadata
 from orbitoby.archive.raw import (
     RawArtifact,
     save_raw_artifact,
@@ -167,7 +168,7 @@ class Archive(CatalogueAPI, SourceAPI, PlotAPI, ResearchAPI):
                 norad_id=params.get("norad_id"),
                 start=params.get("start"),
                 end=params.get("end"),
-                metadata={"params": {key: str(value) for key, value in params.items()}},
+                metadata=safe_request_metadata(params),
                 extension=adapter.raw_extension_for(
                     dataset,
                     **params,
@@ -219,14 +220,19 @@ class Archive(CatalogueAPI, SourceAPI, PlotAPI, ResearchAPI):
     ) -> pd.DataFrame:
         """Low-level provider-specific data query."""
 
-        records, _ = self._fetch_records(
+        records, artifact = self._fetch_records(
             source=source,
             dataset=dataset,
             archive_raw=archive_raw,
             **params,
         )
 
-        return pd.DataFrame(records)
+        frame = pd.DataFrame(records)
+
+        if artifact is not None:
+            frame.attrs["orbitoby_raw_artifact_ids"] = (artifact.artifact_id,)
+
+        return frame
 
     # ==================================================================
     # Historical orbit
