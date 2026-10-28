@@ -29,6 +29,95 @@ _RECORD_FIELDS = (
 )
 
 
+def verified_orbit_artifact_ids(archive, frame):
+    """Verify historical orbit references against the Core database.
+
+    This is a database lineage check, not a raw-file hash recalculation.
+    Every row must match; partial matches do not certify the result.
+    """
+    import math
+
+    import pandas as pd
+
+    required = (
+        "gp_id",
+        "norad_id",
+        "epoch",
+        "source",
+        "artifact_id",
+        "mean_motion",
+    )
+
+    if frame.empty or not set(required).issubset(frame.columns):
+        return ()
+
+    query = """
+        SELECT COUNT(*)
+        FROM orbit_elements AS o
+        JOIN artifacts AS a
+          ON a.artifact_id = o.artifact_id
+         AND a.source = o.source
+        WHERE CAST(o.gp_id AS VARCHAR) = ?
+          AND o.norad_id = ?
+          AND o.epoch = ?
+          AND o.source = ?
+          AND o.artifact_id = ?
+          AND o.mean_motion = ?
+          AND a.sha256 IS NOT NULL
+          AND a.sha256 <> ''
+    """
+
+    verified = set()
+
+    for gp_id, norad_id, epoch, source, artifact_id, motion in frame.loc[
+        :, list(required)
+    ].itertuples(index=False, name=None):
+        if any(
+            pd.isna(value)
+            for value in (gp_id, norad_id, epoch, source, artifact_id, motion)
+        ):
+            return ()
+
+        if not isinstance(source, str):
+            return ()
+
+        if not isinstance(artifact_id, str) or not (0 < len(artifact_id) <= 256):
+            return ()
+
+        try:
+            number = float(motion)
+            if not math.isfinite(number):
+                return ()
+
+            instant = pd.Timestamp(epoch)
+            if instant.tzinfo is None:
+                return ()
+
+            utc_epoch = instant.tz_convert("UTC")
+            database_epoch = utc_epoch.tz_localize(None).to_pydatetime()
+
+            parameters = [
+                str(gp_id),
+                int(norad_id),
+                database_epoch,
+                source,
+                artifact_id,
+                number,
+            ]
+
+            match = archive.con.execute(query, parameters).fetchone()
+
+        except (TypeError, ValueError, OverflowError):
+            return ()
+
+        if match is None or match[0] != 1:
+            return ()
+
+        verified.add(artifact_id)
+
+    return tuple(sorted(verified))
+
+
 def verified_scientific_artifact_ids(archive, frame):
     """Attest Core canonical artifact references against persisted lineage.
 

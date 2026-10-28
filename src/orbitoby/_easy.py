@@ -295,7 +295,9 @@ class Study:
 
         combined = pd.concat(frames, ignore_index=True)
 
-        return OrbitResult(
+        from orbitoby._easy_lineage import verified_orbit_artifact_ids
+
+        result = OrbitResult(
             combined,
             name="historical orbit",
             start=self.start,
@@ -304,6 +306,12 @@ class Study:
             archive=self._core,
             norad_ids=tuple(int(value) for value in norad_ids),
         )
+
+        result._raw_artifact_ids = verified_orbit_artifact_ids(
+            self._core,
+            combined,
+        )
+        return result
 
     def msis_inputs(
         self,
