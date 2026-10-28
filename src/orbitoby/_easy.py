@@ -277,6 +277,17 @@ class Study:
             if not isinstance(frame, pd.DataFrame):
                 raise TypeError("The Core orbit API did not return a DataFrame.")
 
+            # Core orbital epochs represent UTC instants.
+            # DuckDB may return timezone-naive timestamps.
+            # Normalize only at this trusted orbital-data boundary.
+            if "epoch" in frame.columns and not frame.empty:
+                frame = frame.copy(deep=True)
+                frame["epoch"] = pd.to_datetime(
+                    frame["epoch"],
+                    errors="raise",
+                    utc=True,
+                )
+
             if "norad_id" not in frame.columns:
                 frame = frame.assign(norad_id=int(norad_id))
 
