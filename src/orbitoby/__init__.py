@@ -59,3 +59,9 @@ __all__ = [
 
 
 install_sources_entrypoint()
+
+# Science Day v0.2 additive research API; the existing Study/Archive remain unchanged.
+from ._science_day import catalog, solar_history
+
+if "__all__" in globals():
+    __all__ = list(__all__) + ["catalog", "solar_history"]
