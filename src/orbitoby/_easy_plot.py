@@ -384,4 +384,5 @@ def plot_result(result, *, kind="auto", title=None, width=900, height=360, below
         svg="".join(elements),
         data=frame.copy(),
         provenance=frame.copy(),
+        _source_table=sources.copy(deep=True),
     )

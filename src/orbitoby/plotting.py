@@ -31,6 +31,15 @@ class PlotResult:
     svg: str
     data: pd.DataFrame
     provenance: pd.DataFrame
+    _source_table: pd.DataFrame | None = None
+
+    def sources(self):
+        """List the actual source records used to build this plot."""
+        from ._easy_result import SourceList
+
+        if self._source_table is not None:
+            return SourceList._from_prepared_table(self._source_table)
+        return SourceList(self.provenance, None)
 
     def _repr_svg_(self) -> str:
         return self.svg

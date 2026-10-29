@@ -14,6 +14,14 @@ class SourceList:
         self._table = source_table(frame)
         self.requested_source = requested_source
 
+    @classmethod
+    def _from_prepared_table(cls, table):
+        """Use prepared per-plot source records without re-inference."""
+        obj = cls.__new__(cls)
+        obj._table = table.copy(deep=True)
+        obj.requested_source = None
+        return obj
+
     @property
     def table(self):
         return self._table.copy()
