@@ -7,23 +7,23 @@
 ```python
 import orbitoby as ob
 
-study = ob.study('2024-01-01', '2025-01-01')
+study = ob.study("2024-01-01", "2025-01-01")
 
 # 스타링크를 포함한 카탈로그 탐색. 카탈로그 스냅샷은 과거 궤도 기록이 아닙니다.
-satellites = study.catalog('starlink')
+satellites = study.catalog("starlink")
 satellites.show()
 
 # 특정 위성 선택; NORAD 번호는 예시이며 로컬 카탈로그에 존재해야 합니다.
-chosen = study.catalog('all').find('SWARM')
+chosen = study.catalog("all").find("SWARM")
 chosen.show()
 
 # 관측 기반 장기 태양활동 자료. 연구기간은 study()에서 설정합니다.
-solar = study.solar('F10.7')
+solar = study.solar("F10.7")
 solar.show()
 solar.where(above=200).show()
-solar.plot(highlight=('2024-01-01', '2024-06-01'), above=200).save('activity.svg')
-solar.plot(above=200).save('activity.png')
-solar.export('solar_research_bundle')
+solar.plot(highlight=("2024-01-01", "2024-06-01"), above=200).save("activity.svg")
+solar.plot(above=200).save("activity.png")
+solar.export("solar_research_bundle")
 solar.sources().show()
 ```
 
@@ -32,16 +32,16 @@ solar.sources().show()
 `study.catalog('all')`은 **위성 식별자와 GP 스냅샷의 집합**입니다. 이 명령만으로 모든 위성의 역사적 GP_HISTORY을 다운로드하지 않습니다. 실제 궤도 기록은 기존 `study.orbit()`에서 가져옵니다.
 
 ```python
-study = ob.study('2019-11-01', '2019-12-01')
+study = ob.study("2019-11-01", "2019-12-01")
 orbit = study.orbit(22, sync=False)  # 캐시에 실제 자료가 있을 때
-orbit.plot('mean_motion').save('mean_motion.svg')
+orbit.plot("mean_motion").save("mean_motion.svg")
 orbit.sources().show()
 ```
 
 원하는 위성을 카탈로그에서 선택한 후 개수를 제한하여 조회할 수도 있습니다.
 
 ```python
-chosen = study.catalog('all').find(22)
+chosen = study.catalog("all").find(22)
 orbit = study.orbit(*chosen.ids, sync=False)
 ```
 
