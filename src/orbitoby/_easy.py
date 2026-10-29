@@ -536,6 +536,19 @@ class Study:
     def __repr__(self):
         return f"Study({self.start!s}, {self.end!s}, UTC, end excluded)"
 
+    # Science Day v0.2 progressive API: same study context, optional controls.
+    def catalog(self, group="all", *, refresh=False):
+        """Explore satellite identities. Snapshot membership is not period coverage."""
+        from ._science_day import catalog
+
+        return catalog(group, refresh=refresh)
+
+    def solar(self, metric, *, refresh=False):
+        """Get official long-span solar/geomagnetic data for this study period."""
+        from ._science_day import solar_history
+
+        return solar_history(metric, self.start, self.end, refresh=refresh)
+
 
 def study(start, end):
     """Start a study using two dates."""

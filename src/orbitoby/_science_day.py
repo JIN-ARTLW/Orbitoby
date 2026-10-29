@@ -292,7 +292,7 @@ class ResearchResult:
             name=self.name,
             role=self.role,
             unit=self.unit,
-            sources=self._sources,
+            sources=self._sources_for_frame(frame),
             operations=[
                 *self._ops,
                 {"operation": "pick", "norad_ids": sorted(selected)},
@@ -339,7 +339,7 @@ class ResearchResult:
             name=self.name,
             role=self.role,
             unit=self.unit,
-            sources=self._sources,
+            sources=self._sources_for_frame(df),
             operations=[*self._ops, op],
         )
 
@@ -392,6 +392,111 @@ class ResearchResult:
         return ResearchFigure(
             self, highlight=highlight, above=above, title=title, figsize=figsize
         )
+
+    def _sources_for_frame(self, frame):
+        """Limit provenance to actual retained product rows or catalogue feeds."""
+        if frame.empty:
+            return []
+        if "provider_url" in frame.columns:
+            used_urls = set(frame["provider_url"].dropna().astype(str))
+            return [
+                dict(item)
+                for item in self._sources
+                if item.get("provider_url") in used_urls
+            ]
+        feeds = ("satcat", "active_gp", "starlink_gp", "spacex_supgp")
+        if "norad_id" in frame.columns and any(f in frame.columns for f in feeds):
+            used = {
+                f
+                for f in feeds
+                if f in frame.columns and frame[f].fillna(False).astype(bool).any()
+            }
+            return [dict(item) for item in self._sources if item.get("feed") in used]
+        return [dict(item) for item in self._sources]
+
+    @property
+    def ids(self):
+        """Chosen NORAD identifiers, suitable for study.orbit(*selection.ids)."""
+        if "norad_id" not in self._frame.columns:
+            raise ValueError("ids is available only for satellite catalogue results")
+        return tuple(int(value) for value in self._frame["norad_id"].dropna().unique())
+
+    def find(self, query):
+        """Select matching satellite names or an exact NORAD number."""
+        if "norad_id" not in self._frame.columns or "name" not in self._frame.columns:
+            raise ValueError("find() is available only for satellite catalogue results")
+        if not isinstance(query, (int, str)) or not str(query).strip():
+            raise ValueError(
+                "Provide a satellite name or NORAD ID, for example 'STARLINK' or 39452"
+            )
+        text = str(query).strip()
+        if text.isdecimal():
+            matches = self._frame["norad_id"].eq(int(text))
+        else:
+            matches = (
+                self._frame["name"]
+                .fillna("")
+                .astype(str)
+                .str.contains(text, case=False, regex=False)
+            )
+        selected = self._frame.loc[matches].copy()
+        if selected.empty:
+            raise ValueError(f"No satellite catalogue match for {text!r}")
+        return ResearchResult(
+            selected,
+            name=self.name,
+            role=self.role,
+            unit=self.unit,
+            sources=self._sources_for_frame(selected),
+            operations=[*self._ops, {"operation": "find", "query": text}],
+        )
+
+    def export(
+        self, folder, *, plot=None, parquet=False, highlight=None, above=None, dpi=300
+    ):
+        """Save CSV, optional Parquet/PNG/SVG, and checksummed source manifests."""
+        from pathlib import Path
+
+        folder = Path(folder)
+        if folder.exists() and any(folder.iterdir()):
+            raise FileExistsError(
+                f"Export folder is not empty: {folder}. Choose a new folder."
+            )
+        folder.mkdir(parents=True, exist_ok=True)
+        self.save(folder / "data.csv")
+        if parquet:
+            self.save(folder / "data.parquet")
+        supports_plot = (
+            "timestamp" in self._frame.columns and "value" in self._frame.columns
+        )
+        if plot is None:
+            plot = supports_plot
+        if plot:
+            if not supports_plot:
+                raise ValueError(
+                    "This table is not a time series. Use export(..., plot=False)."
+                )
+            chart = self.plot(highlight=highlight, above=above)
+            chart.save(folder / "figure.svg", dpi=dpi)
+            chart.save(folder / "figure.png", dpi=dpi)
+        from datetime import UTC, datetime
+        from hashlib import sha256
+        from json import dumps
+
+        files = sorted(item for item in folder.iterdir() if item.is_file())
+        summary = {
+            "schema": "orbitoby.science_day.bundle.v1",
+            "generated_at_utc": datetime.now(UTC).isoformat(),
+            "input_rows": len(self._frame),
+            "data_role": self.role,
+            "operations": list(self._ops),
+            "sources": self._sources_for_frame(self._frame),
+            "files": {f.name: sha256(f.read_bytes()).hexdigest() for f in files},
+        }
+        (folder / "bundle_manifest.json").write_text(
+            dumps(summary, ensure_ascii=False, indent=2, default=str), encoding="utf-8"
+        )
+        return folder
 
 
 class ResearchFigure:

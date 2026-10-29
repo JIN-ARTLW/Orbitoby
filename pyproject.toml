@@ -1,6 +1,6 @@
 [project]
 name = "orbitoby"
-version = "0.1.2"
+version = "0.2.0"
 description = "A provenance-first research toolkit for space-weather and orbital time-series data."
 readme = "README.md"
 license = "Apache-2.0"
