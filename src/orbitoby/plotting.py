@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import textwrap
 from dataclasses import dataclass
 from html import escape
 from numbers import Real
@@ -30,6 +31,15 @@ class PlotResult:
     svg: str
     data: pd.DataFrame
     provenance: pd.DataFrame
+    _source_table: pd.DataFrame | None = None
+
+    def sources(self):
+        """List the actual source records used to build this plot."""
+        from ._easy_result import SourceList
+
+        if self._source_table is not None:
+            return SourceList._from_prepared_table(self._source_table)
+        return SourceList(self.provenance, None)
 
     def _repr_svg_(self) -> str:
         return self.svg
@@ -40,6 +50,34 @@ class PlotResult:
             raise ValueError("Orbitoby native plots are saved as .svg files.")
         target.write_text(self.svg, encoding="utf-8")
         return target
+
+
+_SUPERSCRIPT = str.maketrans(
+    {
+        "0": "⁰",
+        "1": "¹",
+        "2": "²",
+        "3": "³",
+        "4": "⁴",
+        "5": "⁵",
+        "6": "⁶",
+        "7": "⁷",
+        "8": "⁸",
+        "9": "⁹",
+        "-": "⁻",
+        "+": "⁺",
+    }
+)
+
+
+def _format_axis_math(value: str) -> str:
+    import re
+
+    return re.sub(
+        r"\^([+-]?\d+)",
+        lambda m: m.group(1).translate(_SUPERSCRIPT),
+        value,
+    )
 
 
 class PlotAPI:
@@ -228,6 +266,7 @@ class PlotAPI:
         legend: bool,
         width: int,
         height: int,
+        time_range: tuple[object, object] | None = None,
     ) -> str:
         if width < 520:
             raise ValueError("width must be at least 520.")
@@ -244,13 +283,22 @@ class PlotAPI:
         include_source = frame["source"].nunique() > 1
         include_dataset = frame["dataset"].nunique() > 1
 
+        group_columns = ["metric", "source", "dataset"]
+
+        if "plot_label" in frame.columns:
+            group_columns.append("plot_label")
+
         groups = list(
             frame.groupby(
-                ["metric", "source", "dataset"],
+                group_columns,
                 sort=False,
                 dropna=False,
             )
         )
+
+        # Ensure multi-series legends are not clipped vertically.
+        if legend:
+            height = max(height, 128 + len(groups) * 48)
 
         valid_values = []
         for value in frame["value"]:
@@ -263,11 +311,39 @@ class PlotAPI:
                 "Canonical plot data contains no plottable numeric values."
             )
 
-        x_min = frame["timestamp"].min()
-        x_max = frame["timestamp"].max()
-        if x_min == x_max:
-            x_min -= pd.Timedelta(minutes=30)
-            x_max += pd.Timedelta(minutes=30)
+        if time_range is None:
+            x_min = frame["timestamp"].min()
+            x_max = frame["timestamp"].max()
+            if x_min == x_max:
+                x_min -= pd.Timedelta(minutes=30)
+                x_max += pd.Timedelta(minutes=30)
+        else:
+            if not isinstance(time_range, tuple) or len(time_range) != 2:
+                raise ValueError("time_range must contain start and end.")
+
+            x_min = pd.Timestamp(time_range[0])
+            x_max = pd.Timestamp(time_range[1])
+
+            x_min = (
+                x_min.tz_localize("UTC")
+                if x_min.tzinfo is None
+                else x_min.tz_convert("UTC")
+            )
+            x_max = (
+                x_max.tz_localize("UTC")
+                if x_max.tzinfo is None
+                else x_max.tz_convert("UTC")
+            )
+
+            if x_min >= x_max:
+                raise ValueError("Invalid plotting time range.")
+
+            if (frame["timestamp"] < x_min).any() or (
+                frame["timestamp"] >= x_max
+            ).any():
+                raise ValueError(
+                    "Plot records fall outside the requested UTC interval."
+                )
 
         y_min = min(valid_values)
         y_max = max(valid_values)
@@ -280,6 +356,17 @@ class PlotAPI:
             pad = (y_max - y_min) * 0.06
             y_min -= pad
             y_max += pad
+
+        axis_exponent = 0
+        axis_scale = 1.0
+        max_absolute = max(abs(y_min), abs(y_max))
+
+        if max_absolute > 0 and math.isfinite(max_absolute):
+            candidate = math.floor(math.log10(max_absolute))
+
+            if candidate <= -3 or candidate >= 4:
+                axis_exponent = candidate
+                axis_scale = 10.0**candidate
 
         left = 78.0
         top = 54.0
@@ -329,7 +416,7 @@ class PlotAPI:
                 self._text(
                     left - 10,
                     y + 4,
-                    self._format_number(value),
+                    self._format_number(value / axis_scale),
                     size=11,
                     anchor="end",
                 )
@@ -373,7 +460,12 @@ class PlotAPI:
             ]
         )
 
-        y_label = next(iter(units)) if len(units) == 1 else "Value"
+        unit_label = next(iter(units)) if len(units) == 1 else "Value"
+        y_label = (
+            f"{unit_label} ×10^{axis_exponent}" if axis_exponent != 0 else unit_label
+        )
+        y_label = _format_axis_math(y_label.replace("×10^", "× 10^"))
+
         parts.append(
             self._text(
                 20,
@@ -396,14 +488,22 @@ class PlotAPI:
 
         legend_entries = []
 
-        for series_index, ((metric, source, dataset), group) in enumerate(groups):
+        for series_index, (key, group) in enumerate(groups):
+            metric, source, dataset = key[:3]
             color = _PALETTE[series_index % len(_PALETTE)]
-            label = self._series_label(
-                metric=str(metric),
-                source=str(source),
-                dataset=str(dataset),
-                include_source=include_source,
-                include_dataset=include_dataset,
+
+            explicit_label = key[3] if len(key) > 3 else None
+
+            label = (
+                explicit_label
+                if isinstance(explicit_label, str) and explicit_label.strip()
+                else self._series_label(
+                    metric=str(metric),
+                    source=str(source),
+                    dataset=str(dataset),
+                    include_source=include_source,
+                    include_dataset=include_dataset,
+                )
             )
             legend_entries.append((color, label))
             group = group.sort_values("timestamp")
@@ -450,19 +550,43 @@ class PlotAPI:
         if legend:
             legend_x = right + 24
             legend_y = top + 8
-            for index, (color, label) in enumerate(legend_entries):
-                y = legend_y + index * 24
+            text_x = legend_x + 26
+            available_width = max(70, float(width) - text_x - 12)
+            max_chars = max(10, int(available_width / 6.5))
+
+            for color, label in legend_entries:
+                lines = textwrap.wrap(
+                    str(label),
+                    width=max_chars,
+                    break_long_words=True,
+                    break_on_hyphens=False,
+                ) or [str(label)]
+
+                # Keep the full scientific identity for accessibility.
+                parts.append(f'<g aria-label="{escape(str(label), quote=True)}">')
                 parts.append(
                     self._line(
                         legend_x,
-                        y,
+                        legend_y,
                         legend_x + 18,
-                        y,
+                        legend_y,
                         stroke=color,
                         width=3,
                     )
                 )
-                parts.append(self._text(legend_x + 26, y + 4, label, size=11))
+
+                for line_index, line in enumerate(lines):
+                    parts.append(
+                        self._text(
+                            text_x,
+                            legend_y + 4 + line_index * 14,
+                            line,
+                            size=11,
+                        )
+                    )
+
+                parts.append("</g>")
+                legend_y += max(24, len(lines) * 14 + 8)
 
         parts.append("</svg>")
         return "".join(parts)
@@ -477,6 +601,7 @@ class PlotAPI:
         legend: bool = True,
         width: int = 900,
         height: int = 480,
+        time_range: tuple[object, object] | None = None,
     ) -> PlotResult:
         """Render canonical data with Orbitoby's native SVG engine.
 
@@ -513,6 +638,7 @@ class PlotAPI:
             legend=legend,
             width=width,
             height=height,
+            time_range=time_range,
         )
 
         return PlotResult(
