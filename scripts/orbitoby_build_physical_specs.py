@@ -1,14 +1,13 @@
-#!/usr/bin/env python3
 """Create evidence-audited physical-specs CSV for Orbitoby, with optional TLE join."""
 from __future__ import annotations
 
 import argparse
 import json
-import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
+
 from orbitoby.physical_specs import (
     attach_discos,
     attach_documented_evidence,
@@ -63,7 +62,7 @@ def main():
         matched.to_csv(out / "orbit_physical_joined.csv", index=False)
         print("Matched TLE rows=", len(matched), flush=True)
     manifest = {
-        "generated_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_utc": datetime.now(UTC).isoformat(),
         "source_receipts": receipts,
         "total_gcat_rows": len(frame),
         "selected_rows": len(chosen),

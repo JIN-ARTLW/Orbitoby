@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Run official 3-provider physical archives sync and query with Orbitoby."""
 import argparse
-import json
 import csv
+import json
 from pathlib import Path
-from orbitoby.physical_archives import PhysicalArchive,GCAT_DEFAULT,GCAT_FULL
+
+from orbitoby.physical_archives import GCAT_DEFAULT, GCAT_FULL, PhysicalArchive
 
 
 def main():

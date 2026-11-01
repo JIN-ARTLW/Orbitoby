@@ -1,9 +1,14 @@
 """Synthetic regression coverage of full catalog union and evidence-safe TLE linking."""
 import json
+
 import pandas as pd
 import pytest
+
 from orbitoby.physical_archives import PhysicalArchive
-from orbitoby.physical_research import query_physical, physical_satellites, _join_tle_history
+from orbitoby.physical_research import (
+    _join_tle_history,
+    query_physical,
+)
 
 GCAT = b'''#JCAT\tSatcat\tType\tName\tMass\tMassFlag\tDryMass\tLength\tDiameter\tSpan\tShape
 S00001\t35694\tP\tCASTOR\t47.45\t\t42\t0.48\t0.4826\t0.48\tSphere

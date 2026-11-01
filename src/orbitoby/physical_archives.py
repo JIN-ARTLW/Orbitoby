@@ -16,7 +16,8 @@ import json
 import os
 import re
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC as UTC_TZ
+from datetime import datetime
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import urlencode, urlparse
@@ -33,7 +34,7 @@ GCAT_FULL = (
     'deepcat', 'ecat', 'hcocat', 'lprcat', 'psatcat', 'psatcat100k', 'pauxcat', 'pftocat', 'ptmpcat',
     'plcat', 'prcat', 'pdeepcat',
 )
-UTC = lambda: datetime.now(timezone.utc).isoformat()
+UTC = lambda: datetime.now(UTC_TZ).isoformat()
 
 
 class ArchiveError(RuntimeError):
@@ -49,7 +50,7 @@ def _positive(value):
         return None
     try:
         number = float(str(value).strip().replace(',', ''))
-        if 0 < number < 1e15 and number == number:
+        if 0 < number < 1e15:
             return number
     except (ValueError, TypeError):
         pass
@@ -92,8 +93,8 @@ def _keeptrack_norad(obj):
         return n
     one=_key_get(obj,'tle1','TLE_LINE_1')
     two=_key_get(obj,'tle2','TLE_LINE_2')
-    if isinstance(one,str) and isinstance(two,str):
-        if one.startswith('1 ') and two.startswith('2 ') and len(one)>=7 and len(two)>=7:
+    if (isinstance(one, str) and isinstance(two, str) and one.startswith('1 ')
+            and two.startswith('2 ') and len(one) >= 7 and len(two) >= 7):
             part1,part2=one[2:7].strip(),two[2:7].strip()
             if part1==part2 and part1.isdecimal():
                 n=int(part1)
@@ -240,7 +241,7 @@ class PhysicalArchive:
         if name not in GCAT_FULL:
             raise ValueError(f'Unrecognized GCAT catalog name {name}')
         lines = raw.decode('utf-8-sig', errors='replace').splitlines()
-        head = next((i for i,x in enumerate(lines) if x.startswith('#JCAT\t') or x.startswith('JCAT\t')),None)
+        head = next((i for i,x in enumerate(lines) if x.startswith(('#JCAT\t', 'JCAT\t'))),None)
         if head is None:
             raise ArchiveError('No GCAT TSV JCAT header')
         content = [lines[head].lstrip('#')] + [x for x in lines[head+1:] if x.strip() and not x.startswith('#')]

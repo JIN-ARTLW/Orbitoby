@@ -1,8 +1,12 @@
 import json
-import tempfile
-from pathlib import Path
+
 import pytest
-from orbitoby.physical_archives import PhysicalArchive,ArchiveError,GCAT_BASE,KEEPTRACK_BULK
+
+from orbitoby.physical_archives import (
+    KEEPTRACK_BULK,
+    ArchiveError,
+    PhysicalArchive,
+)
 
 GCAT_SAMPLE=b'''#JCAT\tSatcat\tType\tName\tMass\tMassFlag\tDryMass\tLength\tDiameter\tSpan\tShape
 S00001\t35694\tP\tCASTOR\t47.45\t\t42\t0.48\t0.4826\t0.48\tSphere

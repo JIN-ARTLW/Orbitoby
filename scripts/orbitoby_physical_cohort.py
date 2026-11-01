@@ -3,7 +3,8 @@
 import argparse
 import json
 from pathlib import Path
-from orbitoby.physical_research import physical_satellites, FIELDS
+
+from orbitoby.physical_research import physical_satellites
 
 
 def main():

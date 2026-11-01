@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Lossless, NORAD-ID-left-join of Orbitoby's plotted objects and GCAT physics.
 
 This script joins *every* distinct NORAD ID in the user plot's monthly TLE output
@@ -13,13 +12,16 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 import pandas as pd
 
 from orbitoby.physical_specs import (
-    attach_discos, attach_documented_evidence, parse_gcat, rank_completeness,
+    attach_discos,
+    attach_documented_evidence,
+    parse_gcat,
+    rank_completeness,
     retrieve_gcat,
 )
 
@@ -194,7 +196,7 @@ def run(args):
         out / 'physical_specs_coverage_report.csv', index=False)
 
     manifest = {
-        'generated_utc': datetime.now(timezone.utc).isoformat(),
+        'generated_utc': datetime.now(UTC).isoformat(),
         'join_type': 'LEFT ONE-TO-ONE on NORAD ID; retain missing values/objects',
         'plot_universe_path': str(plot_path), 'plot_universe_sha256': sha256(plot_path),
         'first_tle_audit_path': str(audit_path) if audit_path else None,

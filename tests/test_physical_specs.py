@@ -6,8 +6,13 @@ import pandas as pd
 import pytest
 
 from orbitoby.physical_specs import (
-    _read_gcat_tsv, attach_discos, attach_documented_evidence,
-    cohort, join_orbit_csv, parse_discos_response, parse_gcat,
+    _read_gcat_tsv,
+    attach_discos,
+    attach_documented_evidence,
+    cohort,
+    join_orbit_csv,
+    parse_discos_response,
+    parse_gcat,
     rank_completeness,
 )
 

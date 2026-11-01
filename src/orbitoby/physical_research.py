@@ -5,7 +5,6 @@ is inferred from geometric area, RCS, BSTAR, or body dimensions.
 """
 from __future__ import annotations
 
-import csv
 import glob
 import json
 import math
@@ -134,7 +133,7 @@ def query_physical(archive, *, catalog=None, required=(), satellites_only=True,
     if not 0 <= conflict_tolerance <= 1: raise ValueError('conflict_tolerance outside [0,1]')
     req = _parse_required(required)
     df = _reference_catalog(catalog)
-    ids = set(int(n) for n in df['norad_id'])
+    ids = {int(n) for n in df['norad_id']}
     vals = {}
     gcat_type = {}
     # DB-side filtering by field avoids reading all raw GCAT source rows.
@@ -167,17 +166,16 @@ def query_physical(archive, *, catalog=None, required=(), satellites_only=True,
         n = int(row.norad_id)
         t = str(row.catalog_object_type).strip().upper()
         if t in ('<NA>', 'NAN', 'NONE', ''): t = gcat_type.get(n, '')
-        if satellites_only:
-            if not (t == 'PAYLOAD' or t.startswith('P ') or t == 'P' or
-                    (t.startswith('P') and not t.startswith('PLATFORM'))):
+        if satellites_only and not (t == 'PAYLOAD' or t.startswith('P ') or t == 'P' or
+                                    (t.startswith('P') and not t.startswith('PLATFORM'))):
                 continue
         info = vals.get(n, {})
         if any(field not in info for field in req): continue
         result = {'norad_id': n, 'object_name': row.object_name,
                   'object_type': t or None}
-        for field in FIELDS:
+        for field, preferences in FIELDS.items():
             options = info.get(field, [])
-            ordering = {src: i for i, (src, _) in enumerate(FIELDS[field])}
+            ordering = {src: i for i, (src, _) in enumerate(preferences)}
             options.sort(key=lambda z: (ordering.get(z['provider'], 100), z['source_key']))
             result[field] = options[0]['value'] if options else None
             result[field+'_available'] = bool(options)
@@ -229,7 +227,6 @@ def _join_tle_history(df, spec):
 
     No orbit selection; every physical candidate remains even without TLE.
     """
-    import pandas as pd
     try:
         import duckdb
     except ImportError as e:

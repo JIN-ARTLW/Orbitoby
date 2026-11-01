@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import importlib.util
-import io
-import tempfile
 from pathlib import Path
 
 import pandas as pd

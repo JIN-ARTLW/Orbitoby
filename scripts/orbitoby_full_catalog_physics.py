@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Inventory physical metadata across ALL Orbitoby NORAD objects, without orbit filters.
 
 Research safeguards:
@@ -17,12 +16,12 @@ import argparse
 import hashlib
 import json
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 
-from orbitoby.physical_specs import parse_gcat, retrieve_gcat, rank_completeness
+from orbitoby.physical_specs import parse_gcat, retrieve_gcat
 
 MANUAL_COLS = [
     'norad_id', 'configuration_context_id',
@@ -292,7 +291,7 @@ def write_outputs(joined, universe_receipt, gcat_receipts, discos_receipt, manua
              'percent_of_payloads': round(value*100/denominator, 3)} for key,value in metrics.items()]
     (out_dir / 'physical_coverage_report.csv').write_text(pd.DataFrame(rows).to_csv(index=False), encoding='utf-8')
     manifest = {
-        'generated_utc': datetime.now(timezone.utc).isoformat(),
+        'generated_utc': datetime.now(UTC).isoformat(),
         'universe': universe_receipt, 'gcat_sources': gcat_receipts,
         'discos_csv': discos_receipt, 'manual_evidence_csv': manual_receipt,
         'counts': metrics,

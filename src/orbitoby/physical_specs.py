@@ -14,14 +14,13 @@ No top-level network activity or hard dependency beyond pandas.
 """
 from __future__ import annotations
 
-import csv
 import hashlib
 import io
 import json
 import math
 import os
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -78,7 +77,7 @@ def retrieve_gcat(cache_dir: str | Path, *, catalogs: tuple[str, ...] = ("satcat
             "source_url": GCAT_CATALOGS[catalog], "documentation_url": GCAT_DOC,
             "retrieved_or_cache": mode, "local_path": str(path),
             "sha256": sha256(raw), "bytes": len(raw),
-            "checked_utc": datetime.now(timezone.utc).isoformat(),
+            "checked_utc": datetime.now(UTC).isoformat(),
         })
     return paths, receipts
 
@@ -88,8 +87,8 @@ def _read_gcat_tsv(raw: bytes):
     text = raw.decode("utf-8-sig", errors="replace")
     lines = text.splitlines()
     for i, line in enumerate(lines):
-        if line.startswith("#JCAT\t") or line.startswith("JCAT\t"):
-            header = line[1:] if line.startswith("#") else line
+        if line.startswith(("#JCAT\t", "JCAT\t")):
+            header = line.removeprefix("#")
             body = [header] + [part for part in lines[i + 1:] if part and not part.lstrip().startswith("#")]
             return pd.read_csv(io.StringIO("\n".join(body)), sep="\t", dtype=str, keep_default_na=False)
     raise ValueError("GCAT TSV header '#JCAT\\t...' not found; source format may have changed")
@@ -140,7 +139,7 @@ def parse_gcat(raw: bytes, *, catalog_name: str = "satcat") -> pd.DataFrame:
         val = str(row[fields["satcat"]]).strip()
         if not re.fullmatch(r"\d{1,9}", val):
             continue
-        def get(field):
+        def get(field, row=row):
             col = fields[field]
             return str(row[col]).strip() if col else ""
         norad = int(val)
@@ -223,10 +222,10 @@ def query_discos(norad_ids: list[int], *, token: str | None = None) -> tuple[pd.
             parsed = parse_discos_response(data, int(norad_id))
             receipts.append({"norad_id": int(norad_id), "url": url, "found": parsed is not None,
                              "api_version": "2", "response_sha256": sha256(raw),
-                             "checked_utc": datetime.now(timezone.utc).isoformat()})
+                             "checked_utc": datetime.now(UTC).isoformat()})
             if parsed:
                 records.append(parsed)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - per-object API errors are recorded in receipts
             receipts.append({"norad_id": int(norad_id), "url": url,
                              "error": f"{type(exc).__name__}: {exc}"})
     return pd.DataFrame(records), receipts

@@ -1,6 +1,5 @@
 """No network: synthetic plot universe and GCAT rows, preserving missing IDs."""
 import importlib.util
-import json
 from pathlib import Path
 
 import pandas as pd
@@ -19,10 +18,10 @@ def test_plot_universe_unique_and_audit(tmp_path):
         'norad_id,epoch,is_cubesat,alt_km\n10,2009-01-01,true,520\n10,2009-02-01,true,519\n20,2010-01-01,false,470\n', encoding='utf-8')
     (folder / 'first_tle_altitude_eligibility_audit.csv').write_text(
         'norad_id,first_alt_km,starts_within_altitude_band\n10,520,true\n20,470,true\n30,630,false\n', encoding='utf-8')
-    universe, p = impl.read_universe(folder)
+    universe, _ = impl.read_universe(folder)
     assert len(universe) == 2
     assert universe['plotted_records'].tolist() == [2, 1]
-    merged, audpath = impl.read_first_tle_audit(folder, universe)
+    merged, _ = impl.read_first_tle_audit(folder, universe)
     assert merged['first_alt_km'].tolist() == [520, 470]
     assert len(merged) == 2  # rejected object 30 not included
 
