@@ -65,3 +65,8 @@ from ._science_day import catalog, solar_history
 
 if "__all__" in globals():
     __all__ = list(__all__) + ["catalog", "solar_history"]
+
+# Optional metadata archive; stdlib-only and no network calls on import.
+from .physical_archives import PhysicalArchive as PhysicalArchive
+from .physical_archives import physics as physics
+from .physical_research import physical_satellites as physical_satellites

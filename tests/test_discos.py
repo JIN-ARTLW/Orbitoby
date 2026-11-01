@@ -80,7 +80,14 @@ def test_discos_uses_safe_http():
     )
 
 
-def test_discos_requires_token():
+def test_discos_requires_token(monkeypatch):
+    for name in (
+        "ORBITOBY_DISCOS_TOKEN",
+        "DISCOS_TOKEN",
+        "ESA_DISCOS_TOKEN",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
     source = DiscosSource(
         credentials=CredentialManager(),
         http=FakeHTTP(),
