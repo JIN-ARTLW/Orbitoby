@@ -19,22 +19,22 @@ This module integrates **officially supported collection methods** for the maxim
 ```python
 import orbitoby as ob
 
-with ob.physics('~/Desktop/Orbitoby_Physical_Archives') as physical:
-    print(physical.sources())         # provider item/NORAD counts
-    print(physical.state())           # complete/pending per provider scope
-    print(physical.coverage())        # reported physical-field coverage
-    satellite = physical.get(35694)   # ALL GCAT/DISCOS/KeepTrack records + raw fields
-    print(satellite['records'])       # raw fields and URLs, no information silently omitted
-    print(satellite['properties'])    # explicitly normalized evidence + caveats
+with ob.physics("~/Desktop/Orbitoby_Physical_Archives") as physical:
+    print(physical.sources())  # provider item/NORAD counts
+    print(physical.state())  # complete/pending per provider scope
+    print(physical.coverage())  # reported physical-field coverage
+    satellite = physical.get(35694)  # ALL GCAT/DISCOS/KeepTrack records + raw fields
+    print(satellite["records"])  # raw fields and URLs, no information silently omitted
+    print(satellite["properties"])  # explicitly normalized evidence + caveats
 
-    ids = physical.select(required=('launch_mass_kg','cross_section_geo_avg_m2'))
+    ids = physical.select(required=("launch_mass_kg", "cross_section_geo_avg_m2"))
     # NOTE: this does NOT mean Cd or an accurate ballistic coefficient is known.
     print(len(ids))
 
-    print(physical.raw(35694,'discos'))
-    print(physical.find_raw('discos','attributes.mass',limit=10))
-    print(physical.collisions('catalog_mass_kg',relative_tolerance=0.05))
-    print(physical.export_wide('~/Desktop/physics_wide.csv'))
+    print(physical.raw(35694, "discos"))
+    print(physical.find_raw("discos", "attributes.mass", limit=10))
+    print(physical.collisions("catalog_mass_kg", relative_tolerance=0.05))
+    print(physical.export_wide("~/Desktop/physics_wide.csv"))
 ```
 
 ### Supported normalized physical fields

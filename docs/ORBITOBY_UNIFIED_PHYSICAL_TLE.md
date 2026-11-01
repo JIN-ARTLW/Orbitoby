@@ -25,13 +25,13 @@ bash ~/Downloads/Orbitoby_Physics_TLE_Colab_Release_v2/APPLY_TEST_MAC.command
 ```python
 import orbitoby as ob
 
-result = ob.physical_satellites(required=['mass', 'area'])
+result = ob.physical_satellites(required=["mass", "area"])
 print(len(result.table), result.table.head())
 
 # 이미 열린 DB에서 실행:
 with ob.physics() as db:
-    candidate = db.satellites(required=['mass', 'area'])
-    richer = db.satellites(required=['mass'], include_sources=True)
+    candidate = db.satellites(required=["mass", "area"])
+    richer = db.satellites(required=["mass"], include_sources=True)
 ```
 
 `result.table`은 pandas DataFrame이며 `result.manifest`는 모집단 크기·필수 조건·원본 수집 진행 상황·과학적 해석상 주의사항을 보존한다.
@@ -40,12 +40,12 @@ with ob.physics() as db:
 
 ```python
 result = ob.physical_satellites(
-    required=['mass', 'area'],
-    tle_parquet='~/Desktop/Orbitoby_TLE_History/data',
+    required=["mass", "area"],
+    tle_parquet="~/Desktop/Orbitoby_TLE_History/data",
     include_sources=True,
 )
-result.to_csv('~/Desktop/Orbitoby_Physical_TLE_cohort.csv')
-print(result.manifest['tle_join'])
+result.to_csv("~/Desktop/Orbitoby_Physical_TLE_cohort.csv")
+print(result.manifest["tle_join"])
 ```
 
 이력 Parquet는 DuckDB를 사용하여 NORAD+epoch 열만 읽고 `COUNT(DISTINCT epoch)`, 최초·최종 관측시각을 계산한다. **TLE가 없어도 결과에서 위성을 삭제하지 않는다.** `has_tle_history=True`는 서로 다른 TLE 관측시각이 2개 이상이라는 뜻이지 궤도가 잘 관측되었다거나 탄도계수가 알려졌다는 뜻이 아니다. `tle_parquet` 옵션을 주지 않으면 TLE를 읽지 않아 물리량 필터만 수행한다.
