@@ -12,6 +12,7 @@ Scientific guarantees:
 
 No top-level network activity or hard dependency beyond pandas.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -40,10 +41,20 @@ def sha256(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def _download(url: str, *, token: str | None = None, timeout: float = 40, max_bytes: int = 45_000_000):
-    headers = {"User-Agent": "OrbitobyResearchPhysicalSpecs/0.1 (+scientific provenance)"}
+def _download(
+    url: str,
+    *,
+    token: str | None = None,
+    timeout: float = 40,
+    max_bytes: int = 45_000_000,
+):
+    headers = {
+        "User-Agent": "OrbitobyResearchPhysicalSpecs/0.1 (+scientific provenance)"
+    }
     if token:
-        headers.update({"Authorization": f"Bearer {token}", "DiscosWeb-Api-Version": "2"})
+        headers.update(
+            {"Authorization": f"Bearer {token}", "DiscosWeb-Api-Version": "2"}
+        )
     with urlopen(Request(url, headers=headers), timeout=timeout) as response:
         raw = response.read(max_bytes + 1)
     if len(raw) > max_bytes:
@@ -53,7 +64,12 @@ def _download(url: str, *, token: str | None = None, timeout: float = 40, max_by
     return raw
 
 
-def retrieve_gcat(cache_dir: str | Path, *, catalogs: tuple[str, ...] = ("satcat", "satcat100k"), refresh=False):
+def retrieve_gcat(
+    cache_dir: str | Path,
+    *,
+    catalogs: tuple[str, ...] = ("satcat", "satcat100k"),
+    refresh=False,
+):
     """Return cached file paths and per-file SHA256 manifests; no redistribution of raw catalogs."""
     root = Path(cache_dir).expanduser()
     root.mkdir(parents=True, exist_ok=True)
@@ -72,13 +88,19 @@ def retrieve_gcat(cache_dir: str | Path, *, catalogs: tuple[str, ...] = ("satcat
             mode = "download"
         raw = path.read_bytes()
         paths.append(path)
-        receipts.append({
-            "provider": "Jonathan McDowell GCAT", "dataset": catalog,
-            "source_url": GCAT_CATALOGS[catalog], "documentation_url": GCAT_DOC,
-            "retrieved_or_cache": mode, "local_path": str(path),
-            "sha256": sha256(raw), "bytes": len(raw),
-            "checked_utc": datetime.now(UTC).isoformat(),
-        })
+        receipts.append(
+            {
+                "provider": "Jonathan McDowell GCAT",
+                "dataset": catalog,
+                "source_url": GCAT_CATALOGS[catalog],
+                "documentation_url": GCAT_DOC,
+                "retrieved_or_cache": mode,
+                "local_path": str(path),
+                "sha256": sha256(raw),
+                "bytes": len(raw),
+                "checked_utc": datetime.now(UTC).isoformat(),
+            }
+        )
     return paths, receipts
 
 
@@ -89,9 +111,17 @@ def _read_gcat_tsv(raw: bytes):
     for i, line in enumerate(lines):
         if line.startswith(("#JCAT\t", "JCAT\t")):
             header = line.removeprefix("#")
-            body = [header] + [part for part in lines[i + 1:] if part and not part.lstrip().startswith("#")]
-            return pd.read_csv(io.StringIO("\n".join(body)), sep="\t", dtype=str, keep_default_na=False)
-    raise ValueError("GCAT TSV header '#JCAT\\t...' not found; source format may have changed")
+            body = [header] + [
+                part
+                for part in lines[i + 1 :]
+                if part and not part.lstrip().startswith("#")
+            ]
+            return pd.read_csv(
+                io.StringIO("\n".join(body)), sep="\t", dtype=str, keep_default_na=False
+            )
+    raise ValueError(
+        "GCAT TSV header '#JCAT\\t...' not found; source format may have changed"
+    )
 
 
 def _col(df, *names):
@@ -103,7 +133,7 @@ def _col(df, *names):
 
 
 def _number(v):
-    val = str(v).strip().replace(',', '')
+    val = str(v).strip().replace(",", "")
     if not val or val in ("-", "?", "--"):
         return math.nan
     try:
@@ -124,51 +154,73 @@ def parse_gcat(raw: bytes, *, catalog_name: str = "satcat") -> pd.DataFrame:
         "satcat": _col(source, "Satcat"),
         "name": _col(source, "Name", "Satname"),
         "type": _col(source, "Type"),
-        "mass": _col(source, "Mass"), "mass_flag": _col(source, "MassFlag"),
-        "dry_mass": _col(source, "DryMass"), "dry_mass_flag": _col(source, "DryFlag"),
-        "length": _col(source, "Length"), "length_flag": _col(source, "LFlag"),
-        "diameter": _col(source, "Diameter"), "diameter_flag": _col(source, "DFlag"),
-        "span": _col(source, "Span"), "span_flag": _col(source, "SpanFlag"),
+        "mass": _col(source, "Mass"),
+        "mass_flag": _col(source, "MassFlag"),
+        "dry_mass": _col(source, "DryMass"),
+        "dry_mass_flag": _col(source, "DryFlag"),
+        "length": _col(source, "Length"),
+        "length_flag": _col(source, "LFlag"),
+        "diameter": _col(source, "Diameter"),
+        "diameter_flag": _col(source, "DFlag"),
+        "span": _col(source, "Span"),
+        "span_flag": _col(source, "SpanFlag"),
         "shape": _col(source, "Shape"),
     }
     for mandatory in ("satcat", "mass", "length", "shape"):
         if fields[mandatory] is None:
-            raise ValueError(f"Required GCAT field {mandatory} missing; found {list(source.columns)}")
+            raise ValueError(
+                f"Required GCAT field {mandatory} missing; found {list(source.columns)}"
+            )
     records = []
     for _, row in source.iterrows():
         val = str(row[fields["satcat"]]).strip()
         if not re.fullmatch(r"\d{1,9}", val):
             continue
+
         def get(field, row=row):
             col = fields[field]
             return str(row[col]).strip() if col else ""
+
         norad = int(val)
-        records.append({
-            "norad_id": norad,
-            "object_name": get("name"), "object_type": get("type"),
-            "launch_mass_kg": _number(get("mass")),
-            "launch_mass_flag": _flag(get("mass_flag")),
-            "dry_mass_kg": _number(get("dry_mass")),
-            "dry_mass_flag": _flag(get("dry_mass_flag")),
-            "body_length_m": _number(get("length")),
-            "body_length_flag": _flag(get("length_flag")),
-            "body_diameter_m": _number(get("diameter")),
-            "body_diameter_flag": _flag(get("diameter_flag")),
-            "total_span_m": _number(get("span")),
-            "total_span_flag": _flag(get("span_flag")),
-            "shape_description": get("shape"),
-            "catalog_name": catalog_name, "gcat_source_url": GCAT_CATALOGS.get(catalog_name, ""),
-            "solar_panel_status": "unknown", "solar_panel_source_url": "",
-            "surface_area_m2": math.nan, "surface_area_source_url": "",
-            "drag_projected_area_m2": math.nan, "drag_area_source_url": "",
-            "attitude_context": "unknown", "discos_xsect_avg_m2": math.nan,
-            "discos_xsect_min_m2": math.nan, "discos_xsect_max_m2": math.nan,
-            "discos_mass_kg": math.nan,
-        })
+        records.append(
+            {
+                "norad_id": norad,
+                "object_name": get("name"),
+                "object_type": get("type"),
+                "launch_mass_kg": _number(get("mass")),
+                "launch_mass_flag": _flag(get("mass_flag")),
+                "dry_mass_kg": _number(get("dry_mass")),
+                "dry_mass_flag": _flag(get("dry_mass_flag")),
+                "body_length_m": _number(get("length")),
+                "body_length_flag": _flag(get("length_flag")),
+                "body_diameter_m": _number(get("diameter")),
+                "body_diameter_flag": _flag(get("diameter_flag")),
+                "total_span_m": _number(get("span")),
+                "total_span_flag": _flag(get("span_flag")),
+                "shape_description": get("shape"),
+                "catalog_name": catalog_name,
+                "gcat_source_url": GCAT_CATALOGS.get(catalog_name, ""),
+                "solar_panel_status": "unknown",
+                "solar_panel_source_url": "",
+                "surface_area_m2": math.nan,
+                "surface_area_source_url": "",
+                "drag_projected_area_m2": math.nan,
+                "drag_area_source_url": "",
+                "attitude_context": "unknown",
+                "discos_xsect_avg_m2": math.nan,
+                "discos_xsect_min_m2": math.nan,
+                "discos_xsect_max_m2": math.nan,
+                "discos_mass_kg": math.nan,
+            }
+        )
     result = pd.DataFrame(records)
     if result.empty:
         return result
-    result = result.sort_values("norad_id").drop_duplicates("norad_id", keep="last").reset_index(drop=True)
+    result = (
+        result.sort_values("norad_id")
+        .drop_duplicates("norad_id", keep="last")
+        .reset_index(drop=True)
+    )
     return result
 
 
@@ -182,7 +234,9 @@ def load_gcat(paths: list[str | Path]) -> pd.DataFrame:
         raise ValueError("No GCAT entries with numeric NORAD IDs")
     merged = pd.concat(frames, ignore_index=True)
     if merged.norad_id.duplicated().any():
-        raise ValueError("Conflicting NORAD IDs across source catalogs; inspect rather than overwrite")
+        raise ValueError(
+            "Conflicting NORAD IDs across source catalogs; inspect rather than overwrite"
+        )
     return merged
 
 
@@ -206,7 +260,9 @@ def parse_discos_response(data: dict, requested_norad: int) -> dict | None:
     return None
 
 
-def query_discos(norad_ids: list[int], *, token: str | None = None) -> tuple[pd.DataFrame, list]:
+def query_discos(
+    norad_ids: list[int], *, token: str | None = None
+) -> tuple[pd.DataFrame, list]:
     """Opt-in authenticated queries. No tokens saved or echoed. Max 30 IDs per call."""
     token = token or os.environ.get("ORBITOBY_DISCOS_TOKEN", "")
     if not token:
@@ -220,14 +276,26 @@ def query_discos(norad_ids: list[int], *, token: str | None = None) -> tuple[pd.
             raw = _download(url, token=token, max_bytes=1_000_000)
             data = json.loads(raw.decode("utf-8"))
             parsed = parse_discos_response(data, int(norad_id))
-            receipts.append({"norad_id": int(norad_id), "url": url, "found": parsed is not None,
-                             "api_version": "2", "response_sha256": sha256(raw),
-                             "checked_utc": datetime.now(UTC).isoformat()})
+            receipts.append(
+                {
+                    "norad_id": int(norad_id),
+                    "url": url,
+                    "found": parsed is not None,
+                    "api_version": "2",
+                    "response_sha256": sha256(raw),
+                    "checked_utc": datetime.now(UTC).isoformat(),
+                }
+            )
             if parsed:
                 records.append(parsed)
         except Exception as exc:  # noqa: BLE001 - per-object API errors are recorded in receipts
-            receipts.append({"norad_id": int(norad_id), "url": url,
-                             "error": f"{type(exc).__name__}: {exc}"})
+            receipts.append(
+                {
+                    "norad_id": int(norad_id),
+                    "url": url,
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+            )
     return pd.DataFrame(records), receipts
 
 
@@ -243,16 +311,30 @@ def attach_discos(gcat: pd.DataFrame, discos: pd.DataFrame) -> pd.DataFrame:
         id_value = int(r["norad_id"])
         if id_value not in out.index:
             continue
-        for k in ("discos_mass_kg", "discos_shape", "discos_xsect_avg_m2", "discos_xsect_min_m2", "discos_xsect_max_m2", "discos_source_url"):
+        for k in (
+            "discos_mass_kg",
+            "discos_shape",
+            "discos_xsect_avg_m2",
+            "discos_xsect_min_m2",
+            "discos_xsect_max_m2",
+            "discos_source_url",
+        ):
             if k in r.index and pd.notna(r[k]) and str(r[k]).strip():
                 out.loc[id_value, k] = r[k]
     return out.reset_index()
 
 
 PANEL_STATES = {"present", "absent", "unknown"}
-REQUIRED_MANUAL = ("norad_id", "solar_panel_status", "solar_panel_source_url",
-                   "surface_area_m2", "surface_area_source_url",
-                   "drag_projected_area_m2", "drag_area_source_url", "attitude_context")
+REQUIRED_MANUAL = (
+    "norad_id",
+    "solar_panel_status",
+    "solar_panel_source_url",
+    "surface_area_m2",
+    "surface_area_source_url",
+    "drag_projected_area_m2",
+    "drag_area_source_url",
+    "attitude_context",
+)
 
 
 def attach_documented_evidence(gcat: pd.DataFrame, evidence: pd.DataFrame):
@@ -271,41 +353,83 @@ def attach_documented_evidence(gcat: pd.DataFrame, evidence: pd.DataFrame):
             continue
         status = str(row.solar_panel_status).strip().lower()
         if status not in PANEL_STATES:
-            raise ValueError(f"Invalid solar_panel_status for NORAD {identifier}: {status}")
+            raise ValueError(
+                f"Invalid solar_panel_status for NORAD {identifier}: {status}"
+            )
         out.loc[identifier, "solar_panel_status"] = status
         for key in REQUIRED_MANUAL[2:]:
             if key in ("surface_area_m2", "drag_projected_area_m2"):
                 out.loc[identifier, key] = _number(row[key])
             else:
-                out.loc[identifier, key] = str(row[key]).strip() if pd.notna(row[key]) else ""
+                out.loc[identifier, key] = (
+                    str(row[key]).strip() if pd.notna(row[key]) else ""
+                )
     return out.reset_index()
 
 
 def rank_completeness(df: pd.DataFrame) -> pd.DataFrame:
     """Documentation coverage, not measured accuracy. Missing values remain missing."""
     out = df.copy()
-    for col in ("launch_mass_kg", "body_length_m", "body_diameter_m", "surface_area_m2", "drag_projected_area_m2"):
+    for col in (
+        "launch_mass_kg",
+        "body_length_m",
+        "body_diameter_m",
+        "surface_area_m2",
+        "drag_projected_area_m2",
+    ):
         if col not in out:
             out[col] = math.nan
-    for col in ("surface_area_source_url", "drag_area_source_url", "solar_panel_source_url", "solar_panel_status", "attitude_context"):
+    for col in (
+        "surface_area_source_url",
+        "drag_area_source_url",
+        "solar_panel_source_url",
+        "solar_panel_status",
+        "attitude_context",
+    ):
         if col not in out:
             out[col] = ""
     out["mass_known"] = pd.to_numeric(out.launch_mass_kg, errors="coerce").gt(0)
-    out["mass_unflagged"] = out.mass_known & ~out.get("launch_mass_flag", pd.Series("?", index=out.index)).astype(str).str.contains("\\?", regex=True)
-    out["dimensions_known"] = pd.to_numeric(out.body_length_m, errors="coerce").gt(0) & pd.to_numeric(out.body_diameter_m, errors="coerce").gt(0)
-    out["panel_documented"] = out.solar_panel_status.isin(("present", "absent")) & out.solar_panel_source_url.astype(str).str.startswith(('https://', 'http://'))
-    out["surface_area_documented"] = pd.to_numeric(out.surface_area_m2, errors="coerce").gt(0) & out.surface_area_source_url.astype(str).str.startswith(('https://','http://'))
-    out["drag_area_documented"] = pd.to_numeric(out.drag_projected_area_m2, errors="coerce").gt(0) & out.drag_area_source_url.astype(str).str.startswith(('https://','http://'))
-    out["strict_documented"] = (out.mass_unflagged & out.dimensions_known & out.panel_documented &
-                                out.surface_area_documented & out.drag_area_documented &
-                                ~out.attitude_context.astype(str).str.lower().isin(("", "unknown")))
+    out["mass_unflagged"] = out.mass_known & ~out.get(
+        "launch_mass_flag", pd.Series("?", index=out.index)
+    ).astype(str).str.contains("\\?", regex=True)
+    out["dimensions_known"] = pd.to_numeric(out.body_length_m, errors="coerce").gt(
+        0
+    ) & pd.to_numeric(out.body_diameter_m, errors="coerce").gt(0)
+    out["panel_documented"] = out.solar_panel_status.isin(
+        ("present", "absent")
+    ) & out.solar_panel_source_url.astype(str).str.startswith(("https://", "http://"))
+    out["surface_area_documented"] = pd.to_numeric(
+        out.surface_area_m2, errors="coerce"
+    ).gt(0) & out.surface_area_source_url.astype(str).str.startswith(
+        ("https://", "http://")
+    )
+    out["drag_area_documented"] = pd.to_numeric(
+        out.drag_projected_area_m2, errors="coerce"
+    ).gt(0) & out.drag_area_source_url.astype(str).str.startswith(
+        ("https://", "http://")
+    )
+    out["strict_documented"] = (
+        out.mass_unflagged
+        & out.dimensions_known
+        & out.panel_documented
+        & out.surface_area_documented
+        & out.drag_area_documented
+        & ~out.attitude_context.astype(str).str.lower().isin(("", "unknown"))
+    )
     out["completeness_tier"] = "incomplete"
-    out.loc[out.mass_known & out.dimensions_known, "completeness_tier"] = "catalog_physical_partial"
+    out.loc[out.mass_known & out.dimensions_known, "completeness_tier"] = (
+        "catalog_physical_partial"
+    )
     out.loc[out.strict_documented, "completeness_tier"] = "strict_documented"
     return out
 
 
-def cohort(df: pd.DataFrame, *, min_tier: str = "catalog_physical_partial", payload_only: bool = True) -> pd.DataFrame:
+def cohort(
+    df: pd.DataFrame,
+    *,
+    min_tier: str = "catalog_physical_partial",
+    payload_only: bool = True,
+) -> pd.DataFrame:
     """Select catalog completeness or explicitly documented research-usable cohort.
 
     By default, exclude rocket bodies, fragments and components. GCAT Type
@@ -315,9 +439,11 @@ def cohort(df: pd.DataFrame, *, min_tier: str = "catalog_physical_partial", payl
         raise ValueError(f"Unknown filter tier: {min_tier}")
     out = df.copy()
     if payload_only:
-        if 'object_type' not in out.columns:
-            raise ValueError('Missing GCAT object_type; cannot safely select payload-only')
-        out = out.loc[out.object_type.fillna('').astype(str).str.startswith('P')].copy()
+        if "object_type" not in out.columns:
+            raise ValueError(
+                "Missing GCAT object_type; cannot safely select payload-only"
+            )
+        out = out.loc[out.object_type.fillna("").astype(str).str.startswith("P")].copy()
     if min_tier == "all":
         return out
     if min_tier == "strict_documented":
@@ -325,13 +451,25 @@ def cohort(df: pd.DataFrame, *, min_tier: str = "catalog_physical_partial", payl
     return out.loc[out.mass_known & out.dimensions_known].copy()
 
 
-def join_orbit_csv(specs: pd.DataFrame, orbit_csv: str | Path, *, strict=False) -> pd.DataFrame:
+def join_orbit_csv(
+    specs: pd.DataFrame, orbit_csv: str | Path, *, strict=False
+) -> pd.DataFrame:
     """Join to pre-generated Orbitoby orbit summary/records on NORAD ID only."""
     orbit = pd.read_csv(orbit_csv)
     id_col = _col(orbit, "norad_id", "NORAD_CAT_ID", "satnum")
     if id_col is None:
         raise ValueError("Orbit CSV must contain NORAD ID column")
     orbit = orbit.rename(columns={id_col: "norad_id"})
-    orbit["norad_id"] = pd.to_numeric(orbit["norad_id"], errors="coerce").astype("Int64")
-    use = cohort(specs, min_tier="strict_documented" if strict else "catalog_physical_partial")
-    return orbit.merge(use, on="norad_id", how="inner", validate="many_to_one", suffixes=("", "_physical"))
+    orbit["norad_id"] = pd.to_numeric(orbit["norad_id"], errors="coerce").astype(
+        "Int64"
+    )
+    use = cohort(
+        specs, min_tier="strict_documented" if strict else "catalog_physical_partial"
+    )
+    return orbit.merge(
+        use,
+        on="norad_id",
+        how="inner",
+        validate="many_to_one",
+        suffixes=("", "_physical"),
+    )
